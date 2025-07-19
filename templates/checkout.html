@@ -36,8 +36,8 @@
   {% if cart_items %}
     <div class="product-grid">
       {% for item in cart_items %}
-        <div class="product-card">
-          <h3>{{ item.name }}</h3>
+        <div class="product-in-cart-card">
+          <h3>{{ item.quantity_in_cart }} {{ item.name }}</h3> 
         </div>
       {% endfor %}
     </div>

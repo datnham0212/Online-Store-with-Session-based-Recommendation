@@ -7,22 +7,18 @@
 </head>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
-    const cards = document.querySelectorAll(".product-card");
+    const addToCartBtn = document.querySelector(".add-to-cart-button");
 
-    cards.forEach(card => {
-      card.addEventListener("click", (e) => {
-        const productId = card.getAttribute("href").split("/").pop();
-
+    if (addToCartBtn) {
+      addToCartBtn.addEventListener("click", () => {
+        const productId = addToCartBtn.getAttribute("href").split("/").pop();
         fetch("/log_click", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ item_id: productId })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: productId + "_add_to_cart" })
         });
-
       });
-    });
+    }
   });
 </script>
 <nav class="navbar">
@@ -38,7 +34,7 @@
     <div class="product-info">
       <h2>{{ product.name }}</h2>
       <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti.</p>
-      <a href="/add_to_cart/{{ product.id }}" class="nav-button">Add to Cart</a>
+      <a href="/add_to_cart/{{ product.id }}" class="add-to-cart-button">Add to Cart</a>
     </div>
   </div>
 </body>

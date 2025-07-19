@@ -36,12 +36,25 @@
   {% if cart_items %}
     <div class="product-grid">
       {% for item in cart_items %}
-        <div class="product-card">
-          <h3>{{ item.name }}</h3>
-          <button>Remove</button>
+        <div class="product-in-cart-card">
+        <div class="item-info">
+            <h3>{{ item.quantity_in_cart }} × {{ item.name }}</h3>
+        </div>
+        <div class="cart-actions">
+            <div class="cart-controls">
+                <a href="/add_to_cart/{{ item.id }}">+</a>
+                <a href="/remove_one_from_cart/{{ item.id }}">−</a>
+            </div>
+            <form action="/remove_entire_from_cart/{{ item.id }}" method="get">
+                <button type="submit" class="remove-button">X</button>
+            </form>
+            </div>
         </div>
       {% endfor %}
     </div>
+    <form action="/purchase" method="post" style="text-align:center; margin-top: 20px;">
+        <button type="submit" class="purchase-button">Purchase</button>
+    </form>
   {% else %}
     <p style="text-align:center;">Your cart is empty.</p>
   {% endif %}
