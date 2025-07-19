@@ -5,6 +5,31 @@
   <title>{{ product.name }}</title>
   <link rel="stylesheet" href="/static/style.css" />
 </head>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const cards = document.querySelectorAll(".product-card");
+
+    cards.forEach(card => {
+      card.addEventListener("click", (e) => {
+        const productId = card.getAttribute("href").split("/").pop();
+
+        fetch("/log_click", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ item_id: productId })
+        });
+
+      });
+    });
+  });
+</script>
+<nav class="navbar">
+  <a href="/" class="nav-link">Home</a>
+  <a href="/cart" class="nav-link">Cart</a>
+  <a href="/checkout" class="nav-link">Checkout</a>
+</nav>
 <body>
   <div class="product-detail">
     <div class="product-image">
@@ -13,7 +38,7 @@
     <div class="product-info">
       <h2>{{ product.name }}</h2>
       <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti.</p>
-      <button>Add to Cart</button>
+      <a href="/add_to_cart/{{ product.id }}" class="nav-button">Add to Cart</a>
     </div>
   </div>
 </body>

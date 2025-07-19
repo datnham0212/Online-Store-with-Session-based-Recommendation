@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Session-Based Recommendation</title>
+  <title>Your Cart</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <script>
@@ -31,20 +31,23 @@
   <a href="/checkout" class="nav-link">Checkout</a>
 </nav>
 <body>
-  <h1>Products</h1>
+  <h1>Your Shopping Cart</h1>
 
-  <div class="product-grid" id="product-grid">
-    {% for p in products %}
-      <a href="/product/{{ p.id }}" class="product-card">{{ p.name }}</a>
-    {% endfor %}
-  </div>
+  {% if cart_items %}
+    <div class="product-grid">
+      {% for item in cart_items %}
+        <div class="product-card">
+          <h3>{{ item.name }}</h3>
+          <button>Remove</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p style="text-align:center;">Your cart is empty.</p>
+  {% endif %}
 
-  <h2 style="margin-top: 60px; text-align: center;">Recommended for You</h2>
-
-  <div class="product-grid" id="recommendation-grid">
-    {% for r in recommendations %}
-      <a href="/product/{{ r.id }}" class="product-card">{{ r.name }}</a>
-    {% endfor %}
+  <div style="text-align:center; margin-top: 30px;">
+    <a href="/">Continue Shopping</a>
   </div>
 </body>
 </html>

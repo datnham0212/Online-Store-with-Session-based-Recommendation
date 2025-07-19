@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Session-Based Recommendation</title>
+  <title>Checkout</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <script>
@@ -31,20 +31,32 @@
   <a href="/checkout" class="nav-link">Checkout</a>
 </nav>
 <body>
-  <h1>Products</h1>
+  <h1>Checkout</h1>
 
-  <div class="product-grid" id="product-grid">
-    {% for p in products %}
-      <a href="/product/{{ p.id }}" class="product-card">{{ p.name }}</a>
-    {% endfor %}
-  </div>
+  {% if cart_items %}
+    <div class="product-grid">
+      {% for item in cart_items %}
+        <div class="product-card">
+          <h3>{{ item.name }}</h3>
+        </div>
+      {% endfor %}
+    </div>
 
-  <h2 style="margin-top: 60px; text-align: center;">Recommended for You</h2>
+    <form method="POST" action="/submit-checkout" style="margin-top: 40px; max-width: 400px; margin-left:auto; margin-right:auto;">
+      <label>Name:</label><br>
+      <input type="text" name="name" required><br><br>
+      
+      <label>Delivery Address:</label><br>
+      <textarea name="address" rows="4" required></textarea><br><br>
+      
+      <button type="submit">Complete Order</button>
+    </form>
+  {% else %}
+    <p style="text-align:center;">Your cart is empty.</p>
+  {% endif %}
 
-  <div class="product-grid" id="recommendation-grid">
-    {% for r in recommendations %}
-      <a href="/product/{{ r.id }}" class="product-card">{{ r.name }}</a>
-    {% endfor %}
+  <div style="text-align:center; margin-top: 30px;">
+    <a href="/cart">Back to Cart</a>
   </div>
 </body>
 </html>

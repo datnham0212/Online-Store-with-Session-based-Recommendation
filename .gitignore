@@ -16,6 +16,8 @@ Network Trash Folder
 Temporary Items
 .apdisk
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
 *$py.class
-
+instance/

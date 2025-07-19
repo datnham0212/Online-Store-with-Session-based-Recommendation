@@ -1,4 +1,10 @@
-from flask import Flask, render_template, request
+import os
+from flask import Flask, render_template, request, session, redirect, url_for
+from flask import jsonify  # for JS interactions
+
+app = Flask(__name__, instance_relative_config=True)
+app.config.from_pyfile('config.py') # required for using session, here we use a random 24-byte key
+
 
 app = Flask(__name__)
 
@@ -18,10 +24,17 @@ RECOMMENDATIONS = [
     {"id": "z", "name": "Product Z"},
 ]
 
+def get_cart():
+    return session.get("cart", [])
+
+def add_to_cart(product_id):
+    cart = session.get("cart", [])
+    cart.append(product_id)
+    session["cart"] = cart
+
 @app.route("/")
 def index():
     return render_template("index.html", products=PRODUCTS, recommendations=RECOMMENDATIONS)
-
 
 @app.route("/log_click", methods=["POST"])
 def log_click():
@@ -39,4 +52,22 @@ def product_page(product_id):
     if product:
         return render_template("product.html", product=product)
     return "<h2>Product not found</h2>", 404
+
+@app.route("/add_to_cart/<product_id>")
+def add_to_cart_route(product_id):
+    add_to_cart(product_id)
+    return redirect(url_for("cart"))
+
+@app.route("/cart")
+def cart():
+    cart_ids = get_cart()
+    cart_items = [p for p in PRODUCTS + RECOMMENDATIONS if p["id"] in cart_ids]
+    return render_template("cart.html", cart_items=cart_items)
+
+@app.route("/checkout")
+def checkout():
+    cart_ids = get_cart()
+    cart_items = [p for p in PRODUCTS + RECOMMENDATIONS if p["id"] in cart_ids]
+    return render_template("checkout.html", cart_items=cart_items)
+
 

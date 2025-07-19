@@ -99,6 +99,23 @@ h2, h3 {
   background-color: #3367d6;
 }
 
+.navbar {
+  background-color: #333;
+  padding: 12px 20px;
+  text-align: center;
+}
+
+.nav-link {
+  color: white;
+  text-decoration: none;
+  margin: 0 15px;
+  font-weight: bold;
+}
+
+.nav-link:hover {
+  text-decoration: underline;
+}
+
 #recommendations {
   margin-top: 20px;
   list-style-type: disc;
