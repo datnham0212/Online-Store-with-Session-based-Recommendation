@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 
 app = Flask(__name__)
 
@@ -21,6 +21,17 @@ RECOMMENDATIONS = [
 @app.route("/")
 def index():
     return render_template("index.html", products=PRODUCTS, recommendations=RECOMMENDATIONS)
+
+
+@app.route("/log_click", methods=["POST"])
+def log_click():
+    data = request.get_json()
+    item_id = data.get("item_id")
+    
+    with open("data/interactions.csv", "a") as f:
+        f.write(f"{item_id}\n")  # Extend to include session_id, timestamp if needed
+
+    return "", 204  # No Content
 
 @app.route("/product/<product_id>")
 def product_page(product_id):

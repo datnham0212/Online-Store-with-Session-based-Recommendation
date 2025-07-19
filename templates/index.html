@@ -5,6 +5,30 @@
   <title>Session-Based Recommendation</title>
   <link rel="stylesheet" href="/static/style.css">
 </head>
+
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const cards = document.querySelectorAll(".product-card");
+
+    cards.forEach(card => {
+      card.addEventListener("click", (e) => {
+        const productId = card.getAttribute("href").split("/").pop();
+
+        // Send POST request to log click
+        fetch("/log_click", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ item_id: productId })
+        });
+
+        // Allow default navigation to product page
+      });
+    });
+  });
+</script>
+
 <body>
   <h1>Products</h1>
 

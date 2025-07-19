@@ -24,6 +24,9 @@ h2, h3 {
 }
 
 .product-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 10px;
