@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{{ product.name }}</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="product-detail">
+    <div class="product-image">
+      <img src="/static/images/{{ product.id }}.jpg" alt="{{ product.name }}" />
+    </div>
+    <div class="product-info">
+      <h2>{{ product.name }}</h2>
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse potenti.</p>
+      <button>Add to Cart</button>
+    </div>
+  </div>
+</body>
+</html>
