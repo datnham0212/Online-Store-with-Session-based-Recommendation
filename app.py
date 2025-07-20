@@ -83,6 +83,20 @@ def remove_entire_from_cart(product_id):
         session["cart"] = cart
     return redirect(url_for("cart"))
 
+@app.route("/buy_now/<product_id>")
+def buy_now(product_id):
+    add_to_cart(product_id)
+    
+    cart_items = get_cart_items_with_quantity()
+    session["purchased"] = cart_items  
+    session["cart"] = {}  
+    
+    with open("data/interactions.csv", "a") as f:
+        f.write(f"{product_id}_buy_now\n")
+
+    return redirect(url_for("checkout"))
+
+
 @app.route("/cart")
 def cart():
     cart_items = get_cart_items_with_quantity()
@@ -91,8 +105,8 @@ def cart():
 @app.route("/purchase", methods=["POST"])
 def purchase():
     cart_items = get_cart_items_with_quantity()
-    session["purchased"] = cart_items  # Save a snapshot of cart at purchase time
-    session["cart"] = {}  # Clear cart after purchase
+    session["purchased"] = cart_items  
+    session["cart"] = {}  
     return redirect(url_for("checkout"))
 
 @app.route("/checkout")

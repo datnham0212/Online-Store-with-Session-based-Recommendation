@@ -20,6 +20,21 @@
       });
     }
   });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const buyNowBtn = document.querySelector(".buy-now-button");
+
+    if (buyNowBtn) {
+      buyNowBtn.addEventListener("click", () => {
+        const productId = buyNowBtn.getAttribute("href").split("/").pop();
+        fetch("/log_click", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ item_id: productId + "_buy_now" })
+        });
+      });
+    }
+  });
 </script>
 <nav class="navbar">
   <a href="/" class="nav-link">Home</a>
