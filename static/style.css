@@ -134,6 +134,21 @@ h2, h3 {
   background-color: #3367d6;
 }
 
+.buy-now-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #ff9900;
+  color: white;
+  border-radius: 6px;
+  font-size: 16px;
+  margin-left: 12px;
+  text-decoration: none;
+}
+
+.buy-now-button:hover {
+  background-color: #e68a00;
+}
+
 .product-in-cart-card {
   display: flex;
   justify-content: space-between;
