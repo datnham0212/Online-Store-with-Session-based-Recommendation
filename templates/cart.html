@@ -34,6 +34,7 @@
       const increase = item.querySelector(".increase");
       const decrease = item.querySelector(".decrease");
 
+      const maxQuantity = parseInt(item.getAttribute("data-max-quantity"), 10);
       const updateUI = (quantity) => {
         item.setAttribute("data-quantity", quantity);
         const productName = item.querySelector(".item-info h3").textContent.split('×')[1].trim();
@@ -41,40 +42,18 @@
       };
 
       increase.addEventListener("click", () => {
-        const productId = item.getAttribute("data-id");
         const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
-
-        fetch(`/update_quantity/${productId}/increase`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          }
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.quantity > currentQuantity) {
-            updateUI(data.quantity);
-          } else {
-            alert("Maximum quantity reached!");
-          }
-        });
+        if (currentQuantity < maxQuantity) {
+          updateUI(currentQuantity + 1);
+        } else {
+          alert("Maximum quantity reached!");
+        }
       });
 
       decrease.addEventListener("click", () => {
-        const productId = item.getAttribute("data-id");
         const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
-
         if (currentQuantity > 1) {
-          fetch(`/update_quantity/${productId}/decrease`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            updateUI(data.quantity);
-          });
+          updateUI(currentQuantity - 1);
         }
       });
     });
@@ -90,7 +69,7 @@
   {% if cart_items %}
     <div class="product-grid">
       {% for item in cart_items %}
-        <div class="product-in-cart-card" data-id="{{ item.id }}" data-quantity="{{ item.quantity_in_cart }}">
+        <div class="product-in-cart-card" data-id="{{ item.id }}" data-quantity="{{ item.quantity_in_cart }}" data-max-quantity="{{ item.max_quantity }}">
           <div class="item-info">
             <h3>{{ item.quantity_in_cart }} × {{ item.name }}</h3>
           </div>

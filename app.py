@@ -28,6 +28,7 @@ def get_cart_items_with_quantity():
         if product:
             product_copy = product.copy()
             product_copy["quantity_in_cart"] = qty
+            product_copy["max_quantity"] = product["quantity"]  # Include stock number
             cart_items.append(product_copy)
     return cart_items
 
@@ -63,19 +64,9 @@ def add_to_cart_route(product_id):
     add_to_cart(product_id)
     return redirect(url_for("cart"))
 
-@app.route("/update_quantity/<product_id>/<action>", methods=["POST"])
-def update_quantity(product_id, action):
-    cart = session.get("cart", {})
-    product = next((p for p in PRODUCTS + RECOMMENDATIONS if p["id"] == product_id), None)
-    
-    if product_id in cart and product:
-        if action == "increase" and cart[product_id] < product["quantity"]:
-            cart[product_id] += 1
-        elif action == "decrease" and cart[product_id] > 1:
-            cart[product_id] -= 1
-    
-    session["cart"] = cart
-    return jsonify({"quantity": cart.get(product_id, 0), "max_quantity": product["quantity"]})
+# @app.route("/update_quantity/<product_id>", methods=["POST"])
+# def update_quantity(product_id):
+#   return 
 
 @app.route("/remove_from_cart/<product_id>")
 def remove_from_cart(product_id):
