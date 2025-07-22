@@ -112,5 +112,16 @@ def checkout():
     purchased_items = session.get("purchased", [])
     return render_template("checkout.html", cart_items=purchased_items)
 
+@app.route("/submit-checkout", methods=["POST"])
+def submit_checkout():
+    purchased_items = session.get("purchased", [])
+    item_ids = [f"{item['id']}_complete_transaction" for item in purchased_items]
 
+    with open("data/interactions.csv", "a") as f:
+        for item_id in item_ids:
+            f.write(f"{item_id}\n")  # Log each item as complete_transaction
+
+    # Clear purchased items after logging
+    session["purchased"] = []
+    return redirect(url_for("index"))
 
