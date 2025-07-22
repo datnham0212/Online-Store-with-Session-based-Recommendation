@@ -36,14 +36,6 @@ def add_to_cart(product_id):
     cart[product_id] = cart.get(product_id, 0) + 1
     session["cart"] = cart
 
-def remove_one_from_cart(product_id):
-    cart = session.get("cart", {})
-    if product_id in cart:
-        cart[product_id] -= 1
-        if cart[product_id] <= 0:
-            del cart[product_id]
-        session["cart"] = cart
-
 @app.route("/")
 def index():
     return render_template("index.html", products=PRODUCTS, recommendations=RECOMMENDATIONS)
@@ -70,13 +62,19 @@ def add_to_cart_route(product_id):
     add_to_cart(product_id)
     return redirect(url_for("cart"))
 
-@app.route("/remove_one_from_cart/<product_id>")
-def remove_one_from_cart_route(product_id):
-    remove_one_from_cart(product_id)
-    return redirect(url_for("cart"))
+@app.route("/update_quantity/<product_id>/<action>", methods=["POST"])
+def update_quantity(product_id, action):
+    cart = session.get("cart", {})
+    if product_id in cart:
+        if action == "increase":
+            cart[product_id] += 1
+        elif action == "decrease" and cart[product_id] > 1:
+            cart[product_id] -= 1
+    session["cart"] = cart
+    return jsonify({"quantity": cart.get(product_id, 0)})
 
-@app.route("/remove_entire_from_cart/<product_id>")
-def remove_entire_from_cart(product_id):
+@app.route("/remove_from_cart/<product_id>")
+def remove_from_cart(product_id):
     cart = session.get("cart", {})
     if product_id in cart:
         del cart[product_id]
@@ -90,9 +88,6 @@ def buy_now(product_id):
     cart_items = get_cart_items_with_quantity()
     session["purchased"] = cart_items  
     session["cart"] = {}  
-    
-    with open("data/interactions.csv", "a") as f:
-        f.write(f"{product_id}_buy_now\n")
 
     return redirect(url_for("checkout"))
 

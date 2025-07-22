@@ -116,18 +116,23 @@ h2, h3 {
   text-decoration: underline;
 }
 
-.add-to-cart-button {
+.add-to-cart-button,
+.buy-now-button {
   display: inline-block;
   padding: 12px 24px;
-  background-color: #4285f4;
-  color: white;
-  border: none;
-  border-radius: 6px;
   font-size: 16px;
+  border-radius: 6px;
   text-decoration: none;
+  color: white;
   cursor: pointer;
+  border: none;
   transition: background-color 0.2s ease;
   margin-top: 20px;
+  margin-left: 0;
+}
+
+.add-to-cart-button {
+  background-color: #4285f4;
 }
 
 .add-to-cart-button:hover {
@@ -135,14 +140,8 @@ h2, h3 {
 }
 
 .buy-now-button {
-  display: inline-block;
-  padding: 12px 24px;
   background-color: #ff9900;
-  color: white;
-  border-radius: 6px;
-  font-size: 16px;
   margin-left: 12px;
-  text-decoration: none;
 }
 
 .buy-now-button:hover {
@@ -179,7 +178,7 @@ h2, h3 {
   gap: 10px;
 }
 
-.cart-controls a {
+.cart-controls button{
   display: inline-block;
   padding: 6px 12px;
   font-size: 16px;
@@ -190,7 +189,7 @@ h2, h3 {
   transition: background-color 0.2s ease;
 }
 
-.cart-controls a:hover {
+.cart-controls button:hover {
   background-color: #3367d6;
 }
 
@@ -220,6 +219,49 @@ h2, h3 {
 
 .remove-button:hover {
   background-color: darkred;
+}
+
+.checkout-form {
+  background: #fff;
+  padding: 16px 12px;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  max-width: 300px;
+  margin: 24px auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.checkout-form label {
+  font-weight: bold;
+  margin-bottom: 3px;
+  font-size: 15px;
+  color: #222;
+}
+
+.checkout-form input[type="text"],
+.checkout-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 15px;
+  margin-bottom: 6px;
+  background: #f7f7f7;
+}
+
+.checkout-form textarea {
+  resize: vertical;
+  min-height: 40px;
+}
+
+.checkout-form .purchase-button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 0;
+  font-size: 15px;
 }
 
 

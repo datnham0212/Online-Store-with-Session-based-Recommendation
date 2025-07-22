@@ -25,10 +25,68 @@
     });
   });
 </script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const cartItems = document.querySelectorAll(".product-in-cart-card");
+
+    cartItems.forEach(item => {
+      const quantityElement = item.querySelector(".item-info h3");
+      const increase = item.querySelector(".increase");
+      const decrease = item.querySelector(".decrease");
+
+      const updateUI = (quantity) => {
+        item.setAttribute("data-quantity", quantity);
+        const productName = item.querySelector(".item-info h3").textContent.split('×')[1].trim();
+        quantityElement.textContent = `${quantity} × ${productName}`;
+      };
+
+      increase.addEventListener("click", () => {
+        const productId = item.getAttribute("data-id");
+        const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
+        const newQuantity = currentQuantity + 1;
+
+        // Update UI immediately
+        updateUI(newQuantity);
+
+        // Send request to server
+        fetch(`/update_quantity/${productId}/increase`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          }
+        }).catch(() => {
+          // Revert UI if request fails
+          updateUI(currentQuantity);
+        });
+      });
+
+      decrease.addEventListener("click", () => {
+        const productId = item.getAttribute("data-id");
+        const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
+        if (currentQuantity > 1) {
+          const newQuantity = currentQuantity - 1;
+
+          // Update UI immediately
+          updateUI(newQuantity);
+
+          // Send request to server
+          fetch(`/update_quantity/${productId}/decrease`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            }
+          }).catch(() => {
+            // Revert UI if request fails
+            updateUI(currentQuantity);
+          });
+        }
+      });
+    });
+  });
+</script>
 <nav class="navbar">
   <a href="/" class="nav-link">Home</a>
   <a href="/cart" class="nav-link">Cart</a>
-  <a href="/checkout" class="nav-link">Checkout</a>
 </nav>
 <body>
   <h1>Your Shopping Cart</h1>
@@ -36,19 +94,19 @@
   {% if cart_items %}
     <div class="product-grid">
       {% for item in cart_items %}
-        <div class="product-in-cart-card">
-        <div class="item-info">
+        <div class="product-in-cart-card" data-id="{{ item.id }}" data-quantity="{{ item.quantity_in_cart }}">
+          <div class="item-info">
             <h3>{{ item.quantity_in_cart }} × {{ item.name }}</h3>
-        </div>
-        <div class="cart-actions">
+          </div>
+          <div class="cart-actions">
             <div class="cart-controls">
-                <a href="/add_to_cart/{{ item.id }}">+</a>
-                <a href="/remove_one_from_cart/{{ item.id }}">−</a>
+              <button class="increase">+</button>
+              <button class="decrease">-</button>
             </div>
-            <form action="/remove_entire_from_cart/{{ item.id }}" method="get">
-                <button type="submit" class="remove-button">X</button>
+            <form action="/remove_from_cart/{{ item.id }}" method="get">
+              <button type="submit" class="remove-button">X</button>
             </form>
-            </div>
+          </div>
         </div>
       {% endfor %}
     </div>
