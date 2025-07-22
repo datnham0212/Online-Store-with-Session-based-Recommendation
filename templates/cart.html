@@ -43,41 +43,37 @@
       increase.addEventListener("click", () => {
         const productId = item.getAttribute("data-id");
         const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
-        const newQuantity = currentQuantity + 1;
 
-        // Update UI immediately
-        updateUI(newQuantity);
-
-        // Send request to server
         fetch(`/update_quantity/${productId}/increase`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           }
-        }).catch(() => {
-          // Revert UI if request fails
-          updateUI(currentQuantity);
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.quantity > currentQuantity) {
+            updateUI(data.quantity);
+          } else {
+            alert("Maximum quantity reached!");
+          }
         });
       });
 
       decrease.addEventListener("click", () => {
         const productId = item.getAttribute("data-id");
         const currentQuantity = parseInt(item.getAttribute("data-quantity"), 10);
+
         if (currentQuantity > 1) {
-          const newQuantity = currentQuantity - 1;
-
-          // Update UI immediately
-          updateUI(newQuantity);
-
-          // Send request to server
           fetch(`/update_quantity/${productId}/decrease`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json"
             }
-          }).catch(() => {
-            // Revert UI if request fails
-            updateUI(currentQuantity);
+          })
+          .then(response => response.json())
+          .then(data => {
+            updateUI(data.quantity);
           });
         }
       });

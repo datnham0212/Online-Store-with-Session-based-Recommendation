@@ -65,13 +65,16 @@ def add_to_cart_route(product_id):
 @app.route("/update_quantity/<product_id>/<action>", methods=["POST"])
 def update_quantity(product_id, action):
     cart = session.get("cart", {})
-    if product_id in cart:
-        if action == "increase":
+    product = next((p for p in PRODUCTS + RECOMMENDATIONS if p["id"] == product_id), None)
+    
+    if product_id in cart and product:
+        if action == "increase" and cart[product_id] < product["quantity"]:
             cart[product_id] += 1
         elif action == "decrease" and cart[product_id] > 1:
             cart[product_id] -= 1
+    
     session["cart"] = cart
-    return jsonify({"quantity": cart.get(product_id, 0)})
+    return jsonify({"quantity": cart.get(product_id, 0), "max_quantity": product["quantity"]})
 
 @app.route("/remove_from_cart/<product_id>")
 def remove_from_cart(product_id):
