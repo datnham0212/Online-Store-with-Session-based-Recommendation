@@ -43,10 +43,11 @@ def index():
 @app.route("/log_click", methods=["POST"])
 def log_click():
     data = request.get_json()
-    item_id = data.get("item_id")
-    
+    item_ids = data.get("item_ids", [])
+
     with open("data/interactions.csv", "a") as f:
-        f.write(f"{item_id}\n")  # Extend to include session_id, timestamp if needed
+        for item_id in item_ids:
+            f.write(f"{item_id}\n")  # Extend to include session_id, timestamp if needed
 
     return "", 204  # No Content
 
@@ -86,12 +87,11 @@ def remove_from_cart(product_id):
 
 @app.route("/buy_now/<product_id>")
 def buy_now(product_id):
-    add_to_cart(product_id)
-    
-    cart_items = get_cart_items_with_quantity()
-    session["purchased"] = cart_items  
-    session["cart"] = {}  
-
+    product = next((p for p in PRODUCTS + RECOMMENDATIONS if p["id"] == product_id), None)
+    if product:
+        purchased_item = product.copy()
+        purchased_item["quantity_in_cart"] = 1  # Assume 1 item is purchased
+        session["purchased"] = [purchased_item]  # Only the selected item
     return redirect(url_for("checkout"))
 
 

@@ -7,20 +7,37 @@
 </head>
 <script>
   document.addEventListener("DOMContentLoaded", () => {
+    // Log all items shown on the screen as "<item_id>_view"
+    const productIds = Array.from(document.querySelectorAll("#product-grid .product-card"))
+      .map(card => card.getAttribute("href").split("/").pop() + "_view");
+    const recommendationIds = Array.from(document.querySelectorAll("#recommendation-grid .product-card"))
+      .map(card => card.getAttribute("href").split("/").pop() + "_view");
+
+    const allItemIds = [...productIds, ...recommendationIds];
+
+    fetch("/log_click", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ item_ids: allItemIds })
+    });
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
     const cards = document.querySelectorAll(".product-card");
 
     cards.forEach(card => {
       card.addEventListener("click", (e) => {
-        const productId = card.getAttribute("href").split("/").pop();
+        const productId = card.getAttribute("href").split("/").pop() + "_click_details";
 
         fetch("/log_click", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
           },
-          body: JSON.stringify({ item_id: productId + "_click_details"})
+          body: JSON.stringify({ item_ids: [productId] }) // Send as an array to match log_click() format
         });
-
       });
     });
   });
