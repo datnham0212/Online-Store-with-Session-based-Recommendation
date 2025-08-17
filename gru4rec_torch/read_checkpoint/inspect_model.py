@@ -8,7 +8,6 @@ if BASE_DIR not in sys.path:
 
 from gru4rec_pytorch import GRU4Rec  # now resolves
 
-# CKPT_PATH = os.path.join(BASE_DIR, "output_data", "af_synth_model.pt")
 CKPT_PATH = os.path.join(BASE_DIR, "output_data", "save_model_test.pt")
 gru = GRU4Rec.loadmodel(CKPT_PATH, device="cpu")
 

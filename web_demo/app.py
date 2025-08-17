@@ -1,11 +1,24 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import os
 from datetime import datetime
+import csv
+from uuid import uuid4
 
 app = Flask(__name__, instance_relative_config=True)
 app.config.from_pyfile('config.py')
 
-CATALOG_MAX = 6  # adjust as needed
+# Ensure app.secret_key exists (fallback) so Flask sessions work
+if not app.secret_key:
+    app.secret_key = os.environ.get('FLASK_SECRET') 
+
+# Ensure each client gets a stable session id (persisted in cookie)
+@app.before_request
+def _ensure_session_id():
+    if not session.get("_id"):
+        session["_id"] = str(uuid4())
+        session.modified = True
+
+CATALOG_MAX = 21  # adjust as needed
 
 # Load recommender
 try:
@@ -45,6 +58,7 @@ def get_history():
     return session.get("history", [])
 
 def add_history(pid):
+    pid = str(pid)
     hist = session.get("history", [])
     hist.append(pid)
     session["history"] = hist
@@ -70,6 +84,15 @@ def add_to_cart(product_id):
     cart[product_id] = cart.get(product_id, 0) + 1
     session["cart"] = cart
 
+def _product_for_id(pid):
+    """Return existing product or a lightweight stub for pid (pid may be int/str)."""
+    pid = str(pid)
+    p = next((p for p in PRODUCTS + RECOMMENDATIONS if p.get("id") == pid), None)
+    if p:
+        return p
+    # Lightweight stub — you can enrich with images/prices later
+    return {"id": pid, "name": f"Item {pid}", "quantity": 1}
+
 @app.route("/")
 def index():
     global PRODUCTS
@@ -78,8 +101,13 @@ def index():
     history = get_history()
     rec_ids = []
     if recommender and recommender.ok:
-        rec_ids = recommender.recommend(history, topk=6)
-    recs = [p for p in PRODUCTS if p["id"] in set(rec_ids)]
+        rec_ids = recommender.recommend(history, topk=3) 
+        rec_ids = [str(x) for x in rec_ids] # normailze types
+    # Fallback: if no recs (empty history), show first items as simple recommendations
+    if not rec_ids and PRODUCTS:
+        rec_ids = [p["id"] for p in PRODUCTS[:3]]
+    # Build recommendation objects even if not in PRODUCTS
+    recs = [_product_for_id(rid) for rid in rec_ids]      
     log_event("page_index", extra="|".join(history[-5:]))
     print(f"[INDEX] products={len(PRODUCTS)} history={history} rec_ids={rec_ids}")
     return render_template("index.html", products=PRODUCTS, recommendations=recs)
@@ -156,4 +184,28 @@ def submit_checkout():
         log_event("complete_transaction", item.get("id"))
     session["purchased"] = []
     return redirect(url_for("index"))
+
+def _load_clusters_csv(path):
+    if not os.path.isfile(path):
+        return {}
+    import pandas as pd
+    df = pd.read_csv(path)
+    # dict: item_id -> cluster
+    return dict(zip(df["item_id"].astype(str).values, df["cluster"].astype(int).values))
+
+# On startup, try to load clusters file if present
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+CLUSTERS_CSV = os.path.join(BASE_DIR, 'gru4rec_torch', 'output_data', 'yoochoose_item_clusters.csv')
+ITEM_CLUSTER_MAP = _load_clusters_csv(CLUSTERS_CSV)
+
+@app.route("/clusters")
+def clusters():
+    # Return clusters for PRODUCTS only (grouped)
+    grouped = {}
+    for p in PRODUCTS:
+        cid = ITEM_CLUSTER_MAP.get(str(p["id"]))
+        if cid is None:
+            continue
+        grouped.setdefault(str(cid), []).append(p)
+    return jsonify(grouped)
 
