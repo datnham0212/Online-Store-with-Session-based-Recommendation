@@ -7,18 +7,20 @@ import os, sys, numpy as np, torch, pandas as pd, traceback
 # - Fallback to plain module import if needed.
 # ---------------------------------------------------------------------------
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-if PROJECT_ROOT not in sys.path:
-    sys.path.insert(0, PROJECT_ROOT)
+# Make web_demo directory importable so 'model' is a top-level package
+WEB_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if WEB_ROOT not in sys.path:
+    sys.path.insert(0, WEB_ROOT)
 
-GRU_PKG_DIR = os.path.join(PROJECT_ROOT, 'gru4rec_torch')
+# Also add the concrete package folder to sys.path as a fallback
+GRU_PKG_DIR = os.path.join(WEB_ROOT, 'model', 'gru4rec_torch')
 if GRU_PKG_DIR not in sys.path:
     sys.path.insert(0, GRU_PKG_DIR)
 
 GRU4Rec = None
 _import_error = None
 try:
-    from gru4rec_torch.gru4rec_pytorch import GRU4Rec  # type: ignore
+    from model.gru4rec_torch.gru4rec_pytorch import GRU4Rec  # type: ignore
 except Exception as e_pkg:
     try:
         from gru4rec_pytorch import GRU4Rec  # type: ignore

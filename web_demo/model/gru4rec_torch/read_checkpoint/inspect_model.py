@@ -6,7 +6,7 @@ BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
-from gru4rec_pytorch import GRU4Rec  # now resolves
+from model.gru4rec_torch.gru4rec_pytorch import GRU4Rec  # now resolves
 
 CKPT_PATH = os.path.join(BASE_DIR, "output_data", "save_model_test.pt")
 gru = GRU4Rec.loadmodel(CKPT_PATH, device="cpu")

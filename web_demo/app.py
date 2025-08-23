@@ -23,8 +23,8 @@ CATALOG_MAX = 21  # adjust as needed
 # Load recommender
 try:
     from utils.recommender import GRURecommender
-    BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    MODEL_PATH = os.path.join(BASE_DIR, 'gru4rec_torch', 'output_data', 'save_model_test.pt')
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))   # web_demo folder
+    MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_test.pt")
     recommender = GRURecommender(MODEL_PATH, device="cpu")
     print("Recommender ok:", recommender.ok, "error:", recommender.error, "items:" if recommender.ok else "", len(recommender.itemidmap) if recommender.ok else "")
 except Exception as e:
@@ -194,8 +194,8 @@ def _load_clusters_csv(path):
     return dict(zip(df["item_id"].astype(str).values, df["cluster"].astype(int).values))
 
 # On startup, try to load clusters file if present
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-CLUSTERS_CSV = os.path.join(BASE_DIR, 'gru4rec_torch', 'output_data', 'yoochoose_item_clusters.csv')
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))   # web_demo folder
+CLUSTERS_CSV = os.path.join(BASE_DIR, 'model', 'gru4rec_torch', 'output_data', 'yoochoose_item_clusters.csv')
 ITEM_CLUSTER_MAP = _load_clusters_csv(CLUSTERS_CSV)
 
 @app.route("/clusters")

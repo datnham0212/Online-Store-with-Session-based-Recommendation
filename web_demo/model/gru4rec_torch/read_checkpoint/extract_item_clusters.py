@@ -6,7 +6,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
-from gru4rec_pytorch import GRU4Rec
+from model.gru4rec_torch.gru4rec_pytorch import GRU4Rec
 
 def extract_and_cluster(ckpt_path, out_csv, n_clusters=50, random_state=42):
     gru = GRU4Rec.loadmodel(str(ckpt_path), device="cpu")
