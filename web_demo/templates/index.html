@@ -42,6 +42,38 @@
     });
   });
 </script>
+<script>
+(async function(){
+  const grid = document.getElementById('product-grid');
+  if (!grid) return;
+  let page = 0, size = 50, loading = false, total = null;
+  async function loadPage(){
+    if (loading) return;
+    loading = true;
+    const res = await fetch(`/products?page=${page}&size=${size}`);
+    if (!res.ok) { loading = false; return; }
+    const j = await res.json();
+    total = j.total;
+    j.items.forEach(it=>{
+      const el = document.createElement('div');
+      el.className = 'product';
+      el.innerHTML = `<h4>${it.name}</h4><p>ID: ${it.id}</p><button onclick="location='/product/${it.id}'">View</button>`;
+      grid.appendChild(el);
+    });
+    page += 1;
+    loading = false;
+  }
+  // initial load
+  await loadPage();
+  // optional: infinite scroll
+  window.addEventListener('scroll', ()=> {
+    if (total !== null && page*size >= total) return;
+    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
+      loadPage();
+    }
+  });
+})();
+</script>
 <nav class="navbar">
   <a href="/" class="nav-link">Home</a>
   <a href="/cart" class="nav-link">Cart</a>

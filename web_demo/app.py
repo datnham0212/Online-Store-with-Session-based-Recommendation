@@ -18,7 +18,9 @@ def _ensure_session_id():
         session["_id"] = str(uuid4())
         session.modified = True
 
-CATALOG_MAX = 21  # adjust as needed
+# Keep track of true catalog size (from recommender) but don't materialize all items for the UI.
+CATALOG_MAX = None               # real size (filled after recommender loads)
+UI_DISPLAY_MAX = 200             # max items to build for initial UI (page size)
 
 # Load recommender
 try:
@@ -27,6 +29,12 @@ try:
     MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_test.pt")
     recommender = GRURecommender(MODEL_PATH, device="cpu")
     print("Recommender ok:", recommender.ok, "error:", recommender.error, "items:" if recommender.ok else "", len(recommender.itemidmap) if recommender.ok else "")
+    # set catalog size immediately so /products returns total
+    if recommender and getattr(recommender, "ok", False):
+        try:
+            CATALOG_MAX = len(recommender.itemidmap)
+        except Exception:
+            CATALOG_MAX = None
 except Exception as e:
     recommender = None
     print("Recommender import exception:", e)
@@ -45,13 +53,29 @@ def log_event(event_type, item_id=None, extra=None):
     except Exception as e:
         print("Log event failed:", e)
 
-def _build_products():
+def _build_products(limit=None, offset=0):
     if not (recommender and recommender.ok):
         return []
-    ids = list(recommender.itemidmap.index)[:CATALOG_MAX]
-    return [{"id": str(it), "name": f"Item {it}", "quantity": 5} for it in ids]
+    # determine catalog size lazily
+    global CATALOG_MAX
+    if CATALOG_MAX is None:
+        try:
+            CATALOG_MAX = len(recommender.itemidmap)
+        except Exception:
+            CATALOG_MAX = 0
+    # only build a small page of product stubs for the UI
+    limit = UI_DISPLAY_MAX if limit is None else limit
+    # slice the index without converting entire index to list
+    idx = recommender.itemidmap.index
+    # pandas Index supports slicing; fallback to safe iteration
+    try:
+        slice_ids = idx[offset: offset + limit]
+    except Exception:
+        slice_ids = list(idx)[offset: offset + limit]
+    return [{"id": str(it), "name": f"Item {it}", "quantity": 5} for it in slice_ids]
 
-PRODUCTS = _build_products()
+# build initial PRODUCTS page only (small)
+PRODUCTS = _build_products(limit=UI_DISPLAY_MAX)
 RECOMMENDATIONS = []
 
 def get_history():
@@ -114,13 +138,23 @@ def index():
 
 @app.route("/product/<product_id>")
 def product_page(product_id):
+    global RECOMMENDATIONS
+    # try to find product among the small PRODUCTS page or cached RECOMMENDATIONS
     product = next((p for p in PRODUCTS + RECOMMENDATIONS if p["id"] == product_id), None)
-    if product:
-        add_history(product_id)
-        log_event("view_product", product_id)
-        return render_template("product.html", product=product)
-    log_event("view_missing", product_id)
-    return "<h2>Product not found</h2>", 404
+    if not product:
+        # create a lightweight stub so recommendation links work even when the full catalog
+        # isn't materialized; cache it in RECOMMENDATIONS (bounded) so subsequent routes can find it
+        product = _product_for_id(product_id)
+        RECOMMENDATIONS.insert(0, product)
+        # keep cache from growing unbounded
+        if len(RECOMMENDATIONS) > 500:
+            RECOMMENDATIONS.pop()
+        log_event("view_product_stub", product_id)
+
+    # record history and show product page
+    add_history(product_id)
+    log_event("view_product", product_id)
+    return render_template("product.html", product=product)
 
 @app.route("/add_to_cart/<product_id>")
 def add_to_cart_route(product_id):
@@ -208,4 +242,23 @@ def clusters():
             continue
         grouped.setdefault(str(cid), []).append(p)
     return jsonify(grouped)
+
+# Paginated products endpoint (e.g. /products?page=0&size=50)
+@app.route("/products")
+def products_api():
+    try:
+        page = max(int(request.args.get("page", "0")), 0)
+        size = int(request.args.get("size", UI_DISPLAY_MAX))
+        size = min(max(size, 1), 1000)  # clamp size
+    except Exception:
+        page, size = 0, UI_DISPLAY_MAX
+    offset = page * size
+    prods = _build_products(limit=size, offset=offset)
+    total = CATALOG_MAX
+    if total is None and recommender and getattr(recommender, "ok", False):
+        try:
+            total = len(recommender.itemidmap)
+        except Exception:
+            total = 0
+    return jsonify({"page": page, "size": size, "items": prods, "total": total})
 
