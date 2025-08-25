@@ -125,11 +125,11 @@ def index():
     history = get_history()
     rec_ids = []
     if recommender and recommender.ok:
-        rec_ids = recommender.recommend(history, topk=3) 
+        rec_ids = recommender.recommend(history, topk=6) 
         rec_ids = [str(x) for x in rec_ids] # normailze types
     # Fallback: if no recs (empty history), show first items as simple recommendations
     if not rec_ids and PRODUCTS:
-        rec_ids = [p["id"] for p in PRODUCTS[:3]]
+        rec_ids = [p["id"] for p in PRODUCTS[:6]]
     # Build recommendation objects even if not in PRODUCTS
     recs = [_product_for_id(rid) for rid in rec_ids]      
     log_event("page_index", extra="|".join(history[-5:]))
