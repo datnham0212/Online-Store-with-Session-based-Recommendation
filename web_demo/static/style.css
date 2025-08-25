@@ -24,7 +24,10 @@ h2, h3 {
 }
 
 .product-card {
-  display: flex;
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 18px;
   align-items: center;
   justify-content: center;
   background-color: white;
@@ -35,7 +38,7 @@ h2, h3 {
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  min-height: 280px;
+  min-height: 220px;
   font-size: 16px;
 }
 
@@ -51,6 +54,44 @@ h2, h3 {
   object-fit: contain;
   margin-bottom: 12px;
   border-radius: 6px;
+}
+
+.product-card .product-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+/* meta row inside a card (id + button) */
+.product-card .meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.product-card .product-id {
+  color: #777;
+  font-size: 12px;
+  background: #f4f6f8;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #e6e9ec;
+}
+
+/* view button inside the card (small) */
+.product-card .view-btn {
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #4285f4;
+  color: #fff;
+  border: none;
+  font-size: 13px;
+  cursor: pointer;
+}
+.product-card .view-btn:hover {
+  background: #3367d6;
 }
 
 .product-detail {
@@ -262,6 +303,99 @@ h2, h3 {
   margin-top: 8px;
   padding: 8px 0;
   font-size: 15px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1000px;
+  margin: 12px auto;
+  justify-content: center;
+}
+
+.page-btn {
+  background: #4285f4;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.page-btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+  background: #9bbcf9;
+}
+
+.page-size-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background: white;
+}
+
+.page-size-label {
+  font-size: 14px;
+  color: #222;
+}
+
+/* Recommendation-specific card styles (override defaults in #recommendation-grid) */
+#recommendation-grid .product-card {
+  position: relative;
+  min-height: 160px;
+  padding: 12px;
+  background: linear-gradient(135deg, #ffffff, #f3fbff);
+  border: 1px solid #cfeeff;
+  box-shadow: 0 2px 8px rgba(14,110,210,0.06);
+  border-radius: 10px;
+  font-size: 14px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+#recommendation-grid .product-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(14,110,210,0.10);
+  background: linear-gradient(135deg, #fbffff, #eaf8ff);
+}
+
+#recommendation-grid .product-card .product-card-inner {
+  gap: 6px;
+  align-items: center;
+}
+
+#recommendation-grid .product-card h4 {
+  margin: 6px 0 4px;
+  font-size: 15px;
+  color: #0b63c4;
+}
+
+#recommendation-grid .product-card p {
+  margin: 0;
+  color: #556;
+  font-size: 13px;
+}
+
+/* lightweight badge added via CSS so no template change needed */
+#recommendation-grid .product-card::after {
+  content: "Recommended";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #ffea75;
+  color: #222;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+/* reduce spacing when recommendation grid is shown in compact rows */
+#recommendation-grid.product-grid {
+  gap: 18px;
 }
 
 

@@ -78,21 +78,139 @@
   <a href="/" class="nav-link">Home</a>
   <a href="/cart" class="nav-link">Cart</a>
 </nav>
-<body>
+
   <h1>Products</h1>
+
+  <div class="pagination-controls" id="pagination-controls">
+    <button id="prev-page" class="page-btn" disabled>Prev</button>
+    <span id="page-info">Page 0</span>
+    <button id="next-page" class="page-btn">Next</button>
+    <label for="page-size" class="page-size-label">Page size</label>
+    <select id="page-size" class="page-size-select">
+      <option value="12">12</option>
+      <option value="24" selected>24</option>
+      <option value="48">48</option>
+      <option value="96">96</option>
+    </select>
+  </div>
 
   <div class="product-grid" id="product-grid">
     {% for p in products %}
-      <a href="/product/{{ p.id }}" class="product-card">{{ p.name }}</a>
+      <a href="/product/{{ p.id }}" class="product-card">
+        <div class="product-card-inner">
+          <h4>{{ p.name }}</h4>
+          {% if p.id not in p.name %}
+            <div class="meta">
+              <small class="product-id">ID: {{ p.id }}</small>
+            </div>
+          {% endif %}
+        </div>
+      </a>
     {% endfor %}
   </div>
 
-  <h2 style="margin-top: 60px; text-align: center;">Recommended for You</h2>
+  <div class="pagination-controls bottom-controls" id="bottom-pagination-controls" aria-hidden="true">
+    <button id="prev-page-bottom" class="page-btn" disabled>Prev</button>
+    <span id="page-info-bottom">Page 0</span>
+    <button id="next-page-bottom" class="page-btn">Next</button>
+  </div>
+
+  <h2 style="margin-top: 40px; text-align: center;">Recommended for You</h2>
 
   <div class="product-grid" id="recommendation-grid">
     {% for r in recommendations %}
       <a href="/product/{{ r.id }}" class="product-card">{{ r.name }}</a>
     {% endfor %}
   </div>
+
+<script>
+(function(){
+  // Pagination + rendering
+  const grid = document.getElementById('product-grid');
+  const prevBtn = document.getElementById('prev-page');
+  const nextBtn = document.getElementById('next-page');
+  const prevBtnBottom = document.getElementById('prev-page-bottom');
+  const nextBtnBottom = document.getElementById('next-page-bottom');
+  const pageInfo = document.getElementById('page-info');
+  const pageInfoBottom = document.getElementById('page-info-bottom');
+  const pageSizeSelect = document.getElementById('page-size');
+
+  let page = 0, size = parseInt(pageSizeSelect.value, 10), loading = false, total = null;
+
+  function setButtons() {
+    const last = total !== null ? Math.ceil(total / size) - 1 : null;
+    prevBtn.disabled = page <= 0;
+    prevBtnBottom.disabled = prevBtn.disabled;
+    nextBtn.disabled = last !== null ? page >= last : false;
+    nextBtnBottom.disabled = nextBtn.disabled;
+    pageInfo.textContent = `Page ${page + 1}` + (total !== null ? ` of ${Math.max(1, Math.ceil(total/size))}` : '');
+    pageInfoBottom.textContent = pageInfo.textContent;
+  }
+
+  function buildCard(it){
+    const a = document.createElement('a');
+    a.href = `/product/${encodeURIComponent(it.id)}`;
+    a.className = 'product-card';
+    const hasIdInName = String(it.name).includes(String(it.id));
+    const idHtml = hasIdInName ? '' : `<small class="product-id">ID: ${it.id}</small>`;
+    a.innerHTML = `<div class="product-card-inner"><h4>${it.name}</h4><div class="meta">${idHtml}</div></div>`;
+    // client-side click logging
+    a.addEventListener('click', () => {
+      fetch('/log_click', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ item_id: String(it.id) })
+      }).catch(()=>{});
+    });
+    return a;
+  }
+
+  async function loadPage(pg = 0, sz = size, replace = true){
+    if (loading) return;
+    loading = true;
+    try {
+      const res = await fetch(`/products?page=${pg}&size=${sz}`);
+      if (!res.ok) return;
+      const j = await res.json();
+      total = j.total;
+      if (replace) grid.innerHTML = '';
+      j.items.forEach(it => grid.appendChild(buildCard(it)));
+      // After rendering visible items, log impressions
+      const visibleIds = Array.from(document.querySelectorAll('#product-grid .product-card'))
+        .map(a => a.getAttribute('href').split('/').pop() + '_view');
+      if (visibleIds.length) {
+        fetch('/log_click', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ item_ids: visibleIds })
+        }).catch(()=>{});
+      }
+      page = pg;
+      size = sz;
+      setButtons();
+    } catch (e) {
+      console.error('Load page failed', e);
+    } finally {
+      loading = false;
+    }
+  }
+
+  // button handlers
+  prevBtn.addEventListener('click', () => { if (page>0) loadPage(page-1, size); });
+  prevBtnBottom.addEventListener('click', () => { if (page>0) loadPage(page-1, size); });
+  nextBtn.addEventListener('click', () => { loadPage(page+1, size); });
+  nextBtnBottom.addEventListener('click', () => { loadPage(page+1, size); });
+
+  pageSizeSelect.addEventListener('change', () => {
+    const newSize = Math.max(1, Math.min(1000, parseInt(pageSizeSelect.value, 10) || 24));
+    loadPage(0, newSize, true);
+  });
+
+  // initial load (replace server-rendered content to keep UI consistent)
+  loadPage(0, size, true);
+
+})();
+</script>
+
 </body>
 </html>
