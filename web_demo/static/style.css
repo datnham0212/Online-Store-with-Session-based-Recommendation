@@ -80,20 +80,6 @@ h2, h3 {
   border: 1px solid #e6e9ec;
 }
 
-/* view button inside the card (small) */
-.product-card .view-btn {
-  padding: 6px 10px;
-  border-radius: 6px;
-  background: #4285f4;
-  color: #fff;
-  border: none;
-  font-size: 13px;
-  cursor: pointer;
-}
-.product-card .view-btn:hover {
-  background: #3367d6;
-}
-
 .product-detail {
   display: flex;
   flex-wrap: wrap;
