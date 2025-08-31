@@ -145,3 +145,34 @@ scores all items using the model output weights (Wy / By) via score_items,
 optionally masks out already-seen items, and
 returns the top‑k highest scoring item ids (mapped back with idx_to_item). See recommender.py.
 Summary: recommendations are learned by the GRU4Rec model from training data and returned as the highest‑scoring items given the current session’s sequence of item ids.
+
+
+# Aug 31 updates:
+Đã thêm tóm tắt các lượt huấn luyện GRU4Rec hôm nay (các biến thể CPU siêu nhanh):
+
+Các lần huấn luyện đã thực hiện:
+1. sanity96_e2 (Kiểm tra nhanh nhỏ nhất)
+   Lệnh:
+   python run.py input_data/yoochoose-data/yoochoose_train_valid.dat -t input_data/yoochoose-data/yoochoose_test.dat -m 5 -ps loss=cross-entropy,layers=96,batch_size=128,dropout_p_embed=0.0,dropout_p_hidden=0.0,learning_rate=0.1,momentum=0.0,n_sample=128,sample_alpha=0.4,bpreg=0,logq=1,constrained_embedding=True,elu_param=0,n_epochs=2 -d cpu
+   Mất mát theo epoch: [4.962238, 4.178009]
+   Đánh giá (cutoff=5): Recall@5=0.389505  MRR@5=0.236573
+   Tổng thời gian train ≈74.2s; đánh giá ≈54.8s.
+
+2. gru4rec_ultra_fast_4u1 (Kiểu “full-train” rút gọn)
+   Lệnh:
+   python run.py input_data/yoochoose-data/yoochoose_train_valid.dat -t input_data/yoochoose-data/yoochoose_test.dat -m 5 10 20 -ps loss=cross-entropy,layers=128,batch_size=128,dropout_p_embed=0.0,dropout_p_hidden=0.15,learning_rate=0.08,momentum=0.0,n_sample=128,sample_alpha=0.25,bpreg=0,logq=1,constrained_embedding=True,elu_param=0,n_epochs=3 -d cpu -s output_data/gru4rec_ultra_fast_4u1.pt
+   Mục đích: baseline nhanh đa cutoff. (Chưa ghi lại metric.)
+
+3. gru4rec_ultra_fast_5u1 (Tập trung lặp nhanh)
+   Lệnh:
+   python run.py input_data/yoochoose-data/yoochoose_train_valid.dat -t input_data/yoochoose-data/yoochoose_test.dat -m 5 20 -ps loss=cross-entropy,layers=96,batch_size=192,dropout_p_embed=0.0,dropout_p_hidden=0.1,learning_rate=0.09,momentum=0.0,n_sample=64,sample_alpha=0.3,bpreg=0,logq=1,constrained_embedding=True,elu_param=0,n_epochs=5 -d cpu -s output_data/gru4rec_ultra_fast_5u1.pt
+   Mục đích: vòng tinh chỉnh siêu nhanh.
+
+4. gru4rec_ultra_fast_5u2 (Tăng nhẹ kích thước hidden)
+   Lệnh:
+   python run.py input_data/yoochoose-data/yoochoose_train_valid.dat -t input_data/yoochoose-data/yoochoose_test.dat -m 5 20 -ps loss=cross-entropy,layers=112,batch_size=192,dropout_p_embed=0.0,dropout_p_hidden=0.15,learning_rate=0.085,momentum=0.0,n_sample=96,sample_alpha=0.25,bpreg=0,logq=1,constrained_embedding=True,elu_param=0,n_epochs=6 -d cpu -s output_data/gru4rec_ultra_fast_5u2.pt
+   Mục đích: so sánh tác động của tăng nhẹ layer + kích thước sampling.
+
+Ghi chú:
+- Tất cả chạy trên CPU; n_sample và kích thước layer giảm để tăng tốc.
+- Tiếp theo: thu thập metric cho 4u1/5u1/5u2 (Recall@5/20, MRR) rồi quyết định cấu hình nào mở rộng.
