@@ -97,13 +97,14 @@ Add admin endpoint to reload model/cluster maps and monitor recommender health.
 
 Làm sao biết được item nào để recommend. Dựa vào gì?
 
-
+Chung:
 Click vào A1 -> Kiếm trong dataset thì sẽ có khúc chứa danh sách những item tương tự: [A2, A3, A4]
 
 Backend lấy ds item tương tự nó trả về.
 
-Fontend hiển thị danh sách item tương tự ấy.
+Frontend hiển thị danh sách item tương tự ấy.
 
+Chi tiết:
 app.py có dòng: rec_ids = recommender.recommend(history, topk=6) 
 
 Gọi def recommend(self, session_items, topk=6, exclude_seen=True) từ recommender.py

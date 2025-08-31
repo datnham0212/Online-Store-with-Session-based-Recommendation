@@ -1,4 +1,4 @@
-from model.gru4rec_torch.gru4rec_pytorch import SessionDataIterator
+from gru4rec_pytorch import SessionDataIterator
 import torch
 
 @torch.no_grad()  # Vô hiệu hóa tính toán gradient cho quá trình đánh giá
