@@ -14,48 +14,32 @@ def _ensure_datetime_series(s):
     return pd.to_datetime(s, errors='coerce')
 
 
-def read_and_normalize(paths, dataset='yoochoose', use_events=None):
+def read_and_normalize(paths):
     def _read_file(path):
-        if dataset == 'yoochoose':
-            # Yoochoose-clicks.dat: SessionId, Timestamp, ItemId, Category
-            # Auto-detect separator
-            seps = ['\t', ',', ';', '|']
-            df = None
-            for sep in seps:
-                try:
-                    df = pd.read_csv(
-                        path,
-                        sep=sep,
-                        header=None,
-                        usecols=[0, 1, 2],
-                        names=['SessionId', 'Timestamp', 'ItemId'],
-                        dtype={'SessionId': object, 'ItemId': object},
-                        low_memory=False
-                    )
-                    if df.shape[1] == 3:
-                        break
-                except Exception:
-                    df = None
-                    continue
-            if df is None:
-                raise ValueError(f"Cannot determine separator / read file {path}")
-            # Normalize Timestamp: could be numeric epoch seconds or already date-like
-            df['Timestamp'] = _ensure_datetime_series(df['Timestamp'])
-        else:
-            if path.lower().endswith('.xlsx'):
-                df = pd.read_excel(path)
-            else:
-                df = pd.read_csv(path)
-            df = df.rename(columns={
-                'visitorid': 'SessionId',
-                'itemid': 'ItemId',
-                'event': 'Event',
-                'timestamp': 'Timestamp'
-            })
-            if use_events and 'Event' in df.columns:
-                df = df[df['Event'].isin(use_events)]
-            df = df[['SessionId', 'ItemId', 'Timestamp']]
-            df['Timestamp'] = _ensure_datetime_series(df['Timestamp'])
+        # Yoochoose-clicks.dat: SessionId, Timestamp, ItemId, Category
+        # Auto-detect separator
+        seps = ['\t', ',', ';', '|']
+        df = None
+        for sep in seps:
+            try:
+                df = pd.read_csv(
+                    path,
+                    sep=sep,
+                    header=None,
+                    usecols=[0, 1, 2],
+                    names=['SessionId', 'Timestamp', 'ItemId'],
+                    dtype={'SessionId': object, 'ItemId': object},
+                    low_memory=False
+                )
+                if df.shape[1] == 3:
+                    break
+            except Exception:
+                df = None
+                continue
+        if df is None:
+            raise ValueError(f"Cannot determine separator / read file {path}")
+        # Normalize Timestamp: could be numeric epoch seconds or already date-like
+        df['Timestamp'] = _ensure_datetime_series(df['Timestamp'])
         # Drop rows with invalid timestamps or missing ids
         df = df.dropna(subset=['SessionId', 'ItemId', 'Timestamp'])
         return df
@@ -138,15 +122,13 @@ def split_time_based(df, test_days=7, valid_days=7):
 
 
 def preprocess_pipeline(paths,
-                        dataset,
-                        use_events=None,
                         min_session_length=2,
                         min_item_support=5,
                         test_days=7,
                         valid_days=7,
                         index_start=1):
-    # Pipeline xử lý dữ liệu
-    df = read_and_normalize(paths, dataset, use_events)
+    # Pipeline xử lý dữ liệu Yoochoose
+    df = read_and_normalize(paths)
     if df.empty:
         raise ValueError("No data returned from read_and_normalize")
     df = filter_data(df, min_session_length, min_item_support)
@@ -173,7 +155,6 @@ if __name__ == '__main__':
         print("Using yoochoose file:", yoo_paths)
         yoo_splits, yoo_map = preprocess_pipeline(
             paths=yoo_paths,
-            dataset='yoochoose',
             min_session_length=2,
             min_item_support=5,
             test_days=7,
@@ -189,29 +170,3 @@ if __name__ == '__main__':
             out_df.to_csv(os.path.join(output_dir, f'yoochoose_{name}.dat'), index=False, sep='\t')
         pd.to_pickle(yoo_map, os.path.join(output_dir, 'yoochoose_map.pkl'))
         print("Yoochoose preprocessing complete. Files written to", output_dir)
-
-    # Retail Rocket events.csv (only run if file present)
-    possible_rr = [
-        os.path.join(repo_root, 'retailrocket', 'events.csv'),
-        os.path.join(repo_root, 'yoochoose-data', 'events.csv'),
-        os.path.join(repo_root, '..', 'retailrocket', 'events.csv')
-    ]
-    rr_paths = next((p for p in possible_rr if os.path.isfile(p)), None)
-    if rr_paths is None:
-        print("RetailRocket events.csv not found in expected locations; skipping RetailRocket preprocessing.")
-    else:
-        print("Using RetailRocket file:", rr_paths)
-        rr_splits, rr_map = preprocess_pipeline(
-            paths=rr_paths,
-            dataset='retailrocket',
-            use_events=['view'],
-            index_start=1
-        )
-        output_dir = os.path.join(repo_root, 'output_data')
-        os.makedirs(output_dir, exist_ok=True)
-        for name, df in rr_splits.items():
-            out_df = df.copy()
-            out_df.loc[:, 'Timestamp'] = out_df['Timestamp'].dt.strftime('%Y-%m-%d %H:%M:%S')
-            out_df.to_csv(os.path.join(output_dir, f'retailrocket_{name}.dat'), index=False, sep='\t')
-        pd.to_pickle(rr_map, os.path.join(output_dir, 'retailrocket_map.pkl'))
-        print("RetailRocket preprocessing complete. Files written to", output_dir)

@@ -27,18 +27,15 @@ h2, h3 {
   display: block;
   text-decoration: none;
   color: inherit;
-  padding: 18px;
   align-items: center;
   justify-content: center;
   background-color: white;
   border: 1px solid #ddd;
   border-radius: 10px;
-  padding: 16px;
   text-align: center;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  min-height: 220px;
   font-size: 16px;
 }
 
@@ -89,17 +86,6 @@ h2, h3 {
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-
-.product-image {
-  flex: 1 1 300px;
-  text-align: center;
-}
-
-.product-image img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 10px;
 }
 
 .product-info {
@@ -331,7 +317,6 @@ h2, h3 {
 /* Recommendation-specific card styles (override defaults in #recommendation-grid) */
 #recommendation-grid .product-card {
   position: relative;
-  min-height: 160px;
   padding: 12px;
   background: linear-gradient(135deg, #ffffff, #f3fbff);
   border: 1px solid #cfeeff;
