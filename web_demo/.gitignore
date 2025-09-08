@@ -22,3 +22,5 @@ __pycache__/
 *$py.class
 instance/
 data/
+model/Retailrocket-data/
+model/Yoochoose-data/

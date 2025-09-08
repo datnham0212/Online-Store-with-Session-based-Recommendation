@@ -142,11 +142,14 @@ def preprocess_pipeline(paths,
 if __name__ == '__main__':
     # Try sensible default locations but avoid hard failures if files absent.
     repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-    # prefer local yoochoose-data folder if present, else fall back to older path
+    # Update possible_yoo paths to reflect new Yoochoose-data folder structure
     possible_yoo = [
-        os.path.join(repo_root, 'yoochoose-data', 'yoochoose-clicks.dat'),
-        os.path.join(repo_root, 'yoochoose-clicks.dat'),
-        os.path.join(repo_root, '..', 'yoochoose-data', 'yoochoose-clicks.dat')
+        os.path.join(repo_root, 'Yoochoose-data', 'yoochoose-clicks.dat'),
+        os.path.join(repo_root, 'Yoochoose-data', 'yoochoose-buys.dat'),
+        os.path.join(repo_root, 'Yoochoose-data', 'yoochoose-test.dat'),
+        os.path.join(repo_root, '..', 'Yoochoose-data', 'yoochoose-clicks.dat'),
+        os.path.join(repo_root, '..', 'Yoochoose-data', 'yoochoose-buys.dat'),
+        os.path.join(repo_root, '..', 'Yoochoose-data', 'yoochoose-test.dat')
     ]
     yoo_paths = next((p for p in possible_yoo if os.path.isfile(p)), None)
     if yoo_paths is None:
@@ -161,7 +164,7 @@ if __name__ == '__main__':
             valid_days=7,
             index_start=1
         )
-        output_dir = os.path.join(repo_root, 'output_data')
+        output_dir = os.path.join(repo_root, 'input_data', 'yoochoose-data')
         os.makedirs(output_dir, exist_ok=True)
         for name, df in yoo_splits.items():
             # write Timestamp in ISO format for consistency

@@ -82,7 +82,7 @@ def preprocess_retailrocket(
     test_days=7,
     valid_days=7,
     index_start=1,
-    output_dir='D:/output_data'):
+    output_dir=r'C:/Users/Admin/Documents/Research/Online Store with Session-based Recommendation/web_demo/model/gru4rec_torch/input_data/retailrocket-data'):
     df = read_retailrocket_events(path, use_events)
     df = filter_sessions_items(df, min_session_length, min_item_support)
     df = sort_and_remove_consecutive_duplicates(df)
@@ -96,12 +96,12 @@ def preprocess_retailrocket(
 
 if __name__ == '__main__':
     preprocess_retailrocket(
-        path=r'C:/Users/nahbr/DataNCKH/Retail Rocket/events.csv',
+        path=r'C:/Users/Admin/Documents/Research/Online Store with Session-based Recommendation/web_demo/model/Retailrocket-data/events.csv',
         use_events=['view'],
         min_session_length=2,
         min_item_support=5,
         test_days=7,
         valid_days=7,
         index_start=1,
-        output_dir='D:/output_data'
+        output_dir=r'C:/Users/Admin/Documents/Research/Online Store with Session-based Recommendation/web_demo/model/gru4rec_torch/input_data/retailrocket-data'
     )

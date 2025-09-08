@@ -176,3 +176,12 @@ Các lần huấn luyện đã thực hiện:
 Ghi chú:
 - Tất cả chạy trên CPU; n_sample và kích thước layer giảm để tăng tốc.
 - Tiếp theo: thu thập metric cho 4u1/5u1/5u2 (Recall@5/20, MRR) rồi quyết định cấu hình nào mở rộng.
+
+
+# Sep 7 updates:
+Xoá đi những đoạn code không cần thiết trên preprocessing.py
+Đặt tên preprocessing.py lại thành yoochoose_preprocessing.py
+
+# Sep 8 udpates:
+Sửa lại đường dẫn dataset trên máy Đạt
+Xoá các output cũ, chạy lại 2 script tiền xử lý dataset yc & rr
