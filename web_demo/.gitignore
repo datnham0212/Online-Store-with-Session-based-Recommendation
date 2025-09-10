@@ -21,6 +21,6 @@ __pycache__/
 *.py[cod]
 *$py.class
 instance/
-data/
+# data/
 model/Retailrocket-data/
 model/Yoochoose-data/

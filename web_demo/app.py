@@ -49,7 +49,7 @@ def log_event(event_type, item_id=None, extra=None):
             ts = datetime.utcnow().isoformat()
             sid = session.get("_id") or session.get("session_id") or ""
             hist_len = len(session.get("history", []))
-            f.write(f"{ts},{sid},{event_type},{item_id or ''},{hist_len},{extra or ''}\n")
+            f.write(f"\n{ts},{sid},{event_type},{item_id or ''},{hist_len},{extra or ''}")
     except Exception as e:
         print("Log event failed:", e)
 
@@ -208,7 +208,10 @@ def log_click():
         single = data.get("item_id")
         item_ids = [single] if single else []
     for iid in item_ids:
-        log_event("click", iid)
+        if str(iid).endswith("_view"):
+            log_event("view", iid)
+        else:
+            log_event("click", iid)
     return "", 204
 
 @app.route("/submit-checkout", methods=["POST"])

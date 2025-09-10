@@ -182,6 +182,10 @@ Ghi chú:
 Xoá đi những đoạn code không cần thiết trên preprocessing.py
 Đặt tên preprocessing.py lại thành yoochoose_preprocessing.py
 
-# Sep 8 udpates:
+# Sep 8 updates:
 Sửa lại đường dẫn dataset trên máy Đạt
 Xoá các output cũ, chạy lại 2 script tiền xử lý dataset yc & rr
+
+# Sep 10 updates:
+Giới hạn lại lượng items được log khi view sao cho chỉ log các items có render trên trang hiện tại
+Ngừng gitignore interactions.csv 
