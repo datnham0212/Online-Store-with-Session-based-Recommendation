@@ -189,3 +189,7 @@ Xoá các output cũ, chạy lại 2 script tiền xử lý dataset yc & rr
 # Sep 10 updates:
 Giới hạn lại lượng items được log khi view sao cho chỉ log các items có render trên trang hiện tại
 Ngừng gitignore interactions.csv 
+
+# Sep 17 updates:
+Thêm hàm mất mát TOP1 & TOP1-max
+Thêm tiêu chí đánh giá Coverage & ILD (Intra-List Diversity) 
