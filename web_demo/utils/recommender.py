@@ -86,3 +86,7 @@ class GRURecommender:
             return [str(self.idx_to_item[int(i)]) for i in top_indices]
         except Exception:
             return []
+
+    def reload(self, model_path: str, device: str = "cpu"):
+        """Reload model in-place."""
+        self.__init__(model_path, device=device)

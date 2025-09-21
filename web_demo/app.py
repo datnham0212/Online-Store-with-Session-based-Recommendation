@@ -26,7 +26,7 @@ UI_DISPLAY_MAX = 200             # max items to build for initial UI (page size)
 try:
     from utils.recommender import GRURecommender
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))   # web_demo folder
-    MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_test.pt")
+    MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_new.pt")
     recommender = GRURecommender(MODEL_PATH, device="cpu")
     print("Recommender ok:", recommender.ok, "error:", recommender.error, "items:" if recommender.ok else "", len(recommender.itemidmap) if recommender.ok else "")
     # set catalog size immediately so /products returns total
@@ -43,7 +43,13 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 INTERACTIONS_PATH = os.path.join(DATA_DIR, "interactions.csv")
 os.makedirs(DATA_DIR, exist_ok=True)
 
+ENABLE_VIEW_LOGGING = False
+
 def log_event(event_type, item_id=None, extra=None):
+    if event_type == "view" and not ENABLE_VIEW_LOGGING:
+        return
+    if event_type.startswith("view_") and not ENABLE_VIEW_LOGGING:
+        return
     try:
         with open(INTERACTIONS_PATH, "a", encoding="utf-8") as f:
             ts = datetime.utcnow().isoformat()
@@ -125,9 +131,16 @@ def index():
     history = get_history()
     rec_ids = []
     if recommender and recommender.ok:
-        rec_ids = recommender.recommend(history, topk=6) 
-        rec_ids = [str(x) for x in rec_ids] # normailze types
-    # Fallback: if no recs (empty history), show first items as simple recommendations
+        # convert only numeric ids
+        hist_int = []
+        for x in history:
+            try:
+                hist_int.append(int(str(x).split("_", 1)[0]))
+            except Exception:
+                pass
+        rec_ids = recommender.recommend(hist_int, topk=6)
+        rec_ids = [str(x) for x in rec_ids]
+    # Fallback if still empty
     if not rec_ids and PRODUCTS:
         rec_ids = [p["id"] for p in PRODUCTS[:6]]
     # Build recommendation objects even if not in PRODUCTS
@@ -153,7 +166,8 @@ def product_page(product_id):
 
     # record history and show product page
     add_history(product_id)
-    log_event("view_product", product_id)
+    if ENABLE_VIEW_LOGGING:
+        log_event("view_product", product_id)
     return render_template("product.html", product=product)
 
 @app.route("/add_to_cart/<product_id>")
@@ -201,17 +215,18 @@ def checkout():
 
 @app.route("/log_click", methods=["POST"])
 def log_click():
-    # Expect JSON: { "item_ids": ["123","456"] } or { "item_id": "123" }
     data = request.get_json(silent=True) or {}
     item_ids = data.get("item_ids")
     if item_ids is None:
         single = data.get("item_id")
         item_ids = [single] if single else []
     for iid in item_ids:
-        if str(iid).endswith("_view"):
-            log_event("view", iid)
-        else:
-            log_event("click", iid)
+        s = str(iid)
+        if s.endswith("_view"):
+            if ENABLE_VIEW_LOGGING:
+                log_event("view", s)
+            continue  # skip view logs when disabled
+        log_event("click", s)
     return "", 204
 
 @app.route("/submit-checkout", methods=["POST"])
@@ -257,11 +272,31 @@ def products_api():
         page, size = 0, UI_DISPLAY_MAX
     offset = page * size
     prods = _build_products(limit=size, offset=offset)
-    total = CATALOG_MAX
-    if total is None and recommender and getattr(recommender, "ok", False):
-        try:
-            total = len(recommender.itemidmap)
-        except Exception:
-            total = 0
+    total = len(recommender.itemidmap) if (recommender and getattr(recommender, "ok", False)) else (CATALOG_MAX or 0)
     return jsonify({"page": page, "size": size, "items": prods, "total": total})
+
+@app.route("/admin/reload_model")
+def admin_reload_model():
+    global recommender, PRODUCTS, RECOMMENDATIONS, CATALOG_MAX, MODEL_PATH
+    try:
+        # Reload recommender (support both reload() or re-init)
+        if recommender and hasattr(recommender, "reload"):
+            recommender.reload(MODEL_PATH, device="cpu")
+        else:
+            from utils.recommender import GRURecommender
+            recommender = GRURecommender(MODEL_PATH, device="cpu")
+
+        ok = bool(recommender and getattr(recommender, "ok", False))
+        CATALOG_MAX = len(recommender.itemidmap) if ok else 0
+        PRODUCTS = _build_products(limit=UI_DISPLAY_MAX, offset=0) if ok else []
+        RECOMMENDATIONS = []
+
+        return jsonify({
+            "ok": ok,
+            "error": None if ok else getattr(recommender, "error", "unknown"),
+            "catalog": CATALOG_MAX,
+            "ui_items": len(PRODUCTS)
+        })
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
 

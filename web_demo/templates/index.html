@@ -6,9 +6,8 @@
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <script>
-  // Disabled: log all items on screen as viewed when page loads
+  // Experimental: log all items available
   // document.addEventListener("DOMContentLoaded", () => {
-  //   // Log all items shown on the screen as "<item_id>_view"
   //   const productIds = Array.from(document.querySelectorAll("#product-grid .product-card"))
   //     .map(card => card.getAttribute("href").split("/").pop() + "_view");
   //   const recommendationIds = Array.from(document.querySelectorAll("#recommendation-grid .product-card"))
@@ -177,15 +176,15 @@
       if (replace) grid.innerHTML = '';
       j.items.forEach(it => grid.appendChild(buildCard(it)));
       // After rendering visible items, log impressions
-      const visibleIds = Array.from(document.querySelectorAll('#product-grid .product-card'))
-        .map(a => a.getAttribute('href').split('/').pop() + '_view');
-      if (visibleIds.length) {
-        fetch('/log_click', {
-          method: 'POST',
-          headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ item_ids: visibleIds })
-        }).catch(()=>{});
-      }
+      // const visibleIds = Array.from(document.querySelectorAll('#product-grid .product-card'))
+      //   .map(a => a.getAttribute('href').split('/').pop() + '_view');
+      // if (visibleIds.length) {
+      //   fetch('/log_click', {
+      //     method: 'POST',
+      //     headers: {'Content-Type':'application/json'},
+      //     body: JSON.stringify({ item_ids: visibleIds })
+      //   }).catch(()=>{});
+      // }
       page = pg;
       size = sz;
       setButtons();
