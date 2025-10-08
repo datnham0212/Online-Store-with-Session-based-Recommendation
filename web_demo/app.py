@@ -26,7 +26,7 @@ UI_DISPLAY_MAX = 200             # max items to build for initial UI (page size)
 try:
     from utils.recommender import GRURecommender
     BASE_DIR = os.path.abspath(os.path.dirname(__file__))   # web_demo folder
-    MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_new.pt")
+    MODEL_PATH = os.path.join(BASE_DIR, "model", "gru4rec_torch", "output_data", "save_model_test.pt")
     recommender = GRURecommender(MODEL_PATH, device="cpu")
     print("Recommender ok:", recommender.ok, "error:", recommender.error, "items:" if recommender.ok else "", len(recommender.itemidmap) if recommender.ok else "")
     # set catalog size immediately so /products returns total
@@ -130,7 +130,8 @@ def index():
         PRODUCTS = _build_products()
     history = get_history()
     rec_ids = []
-    if recommender and recommender.ok:
+    sid = session.get("_id")
+    if recommender and recommender.ok and history:
         # convert only numeric ids
         hist_int = []
         for x in history:
@@ -138,12 +139,10 @@ def index():
                 hist_int.append(int(str(x).split("_", 1)[0]))
             except Exception:
                 pass
-        rec_ids = recommender.recommend(hist_int, topk=6)
-        rec_ids = [str(x) for x in rec_ids]
-    # Fallback if still empty
-    if not rec_ids and PRODUCTS:
-        rec_ids = [p["id"] for p in PRODUCTS[:6]]
-    # Build recommendation objects even if not in PRODUCTS
+        if hist_int:
+            rec_ids = recommender.recommend(hist_int, topk=6, session_id=sid)
+            rec_ids = [str(x) for x in rec_ids]
+    # Do not fallback when history is empty; rec_ids will stay []
     recs = [_product_for_id(rid) for rid in rec_ids]      
     log_event("page_index", extra="|".join(history[-5:]))
     print(f"[INDEX] products={len(PRODUCTS)} history={history} rec_ids={rec_ids}")
@@ -168,7 +167,29 @@ def product_page(product_id):
     add_history(product_id)
     if ENABLE_VIEW_LOGGING:
         log_event("view_product", product_id)
-    return render_template("product.html", product=product)
+
+    # update recommender session and compute fresh recommendations
+    sid = session.get("_id")
+    if recommender and hasattr(recommender, "update_session"):
+        try:
+            recommender.update_session(sid, product_id)
+        except Exception:
+            pass
+    history = get_history()
+    rec_ids = []
+    if recommender and recommender.ok and history:
+        hist_int = []
+        for x in history:
+            try:
+                hist_int.append(int(str(x).split("_", 1)[0]))
+            except Exception:
+                pass
+        if hist_int:
+            rec_ids = recommender.recommend(hist_int, topk=6, session_id=sid)
+            rec_ids = [str(x) for x in rec_ids]
+    recs = [_product_for_id(rid) for rid in rec_ids]
+
+    return render_template("product.html", product=product, recommendations=recs)
 
 @app.route("/add_to_cart/<product_id>")
 def add_to_cart_route(product_id):
@@ -300,3 +321,15 @@ def admin_reload_model():
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)})
 
+@app.route("/clear_history", methods=["POST"])
+def clear_history():
+    try:
+        sid = session.get("_id")
+        # reset history trong Flask session
+        session["history"] = []
+        # reset hidden state trong recommender (nếu có)
+        if recommender and hasattr(recommender, "reset_session"):
+            recommender.reset_session(sid)
+        return jsonify({"ok": True, "message": "History cleared"})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})

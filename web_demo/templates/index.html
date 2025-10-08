@@ -113,6 +113,7 @@
     <button id="prev-page-bottom" class="page-btn" disabled>Prev</button>
     <span id="page-info-bottom">Page 0</span>
     <button id="next-page-bottom" class="page-btn">Next</button>
+    <button id="clear-history-btn">Xóa lịch sử</button>
   </div>
 
   <h2 style="margin-top: 40px; text-align: center;">Recommended for You</h2>
@@ -210,6 +211,25 @@
   loadPage(0, size, true);
 
 })();
+
+document.getElementById("clear-history-btn").addEventListener("click", function() {
+    fetch("/clear_history", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ session_id: sessionStorage.getItem("session_id") })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.ok) {
+            alert("Đã xóa lịch sử!");
+            location.reload(); // reset trang chủ, recommender fallback về popular items
+        } else {
+            alert("Lỗi: " + data.error);
+        }
+    });
+});
 </script>
 
 </body>
