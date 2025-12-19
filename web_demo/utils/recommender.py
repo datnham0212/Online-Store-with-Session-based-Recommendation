@@ -163,13 +163,17 @@ class GRURecommender:
             return
         idx = int(self.itemidmap[item_id])
         device = self.gru.device
-        # lấy hidden state cũ hoặc init mới
-        H = self.session_states.get(session_id, [torch.zeros((1, h), dtype=torch.float32, device=device)
-                                                for h in self.gru.model.layers])
+        
+        # Get existing state or create new one - CLONE to avoid aliasing
+        if session_id in self.session_states:
+            H = [h.clone() for h in self.session_states[session_id]]  # Clone existing state
+        else:
+            H = [torch.zeros((1, h), dtype=torch.float32, device=device) for h in self.gru.model.layers]
+        
         X = torch.tensor([idx], dtype=torch.int64, device=device)
         E, O, B = self.gru.model.embed(X, H, Y=None)
         if not (self.gru.model.constrained_embedding or self.gru.model.embedding):
             H[0] = E
         Xh = self.gru.model.hidden_step(E, H, training=False)
         H[-1] = Xh   # cập nhật hidden state cuối cùng
-        self.session_states[session_id] = H
+        self.session_states[session_id] = H  # Store new H list

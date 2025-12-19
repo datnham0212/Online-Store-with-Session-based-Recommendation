@@ -67,8 +67,7 @@ def load_base_data(dat_path):
             header=None,
             usecols=[0,1,2],
             names=["SessionId","ItemId","Time"],
-            dtype=str,
-            low_memory=False
+            dtype=str
         )
         for c in ["SessionId","ItemId","Time"]:
             base[c] = pd.to_numeric(base[c], errors="coerce")
@@ -191,12 +190,18 @@ def train_gru(data_df, epochs=1, device="cpu", params_override=None, param_file=
 def atomic_save(gru, out_path):
     os.makedirs(os.path.dirname(out_path), exist_ok=True)
     fd, tmp_path = tempfile.mkstemp(suffix=".pt", prefix="tmp_gru_")
-    os.close(fd)
-    print(f"[retrain] Saving to temp: {tmp_path}")
-    gru.savemodel(tmp_path)
-    # Atomic replace
-    shutil.move(tmp_path, out_path)
-    print(f"[retrain] Model saved to {out_path}")
+    
+    try:
+        os.close(fd)  # Close the file descriptor
+        print(f"[retrain] Saving to temp: {tmp_path}")
+        gru.savemodel(tmp_path)  # Write to the file path
+        # Atomic replace
+        shutil.move(tmp_path, out_path)
+        print(f"[retrain] Model saved to {out_path}")
+    except Exception as e:
+        if os.path.exists(tmp_path):
+            os.remove(tmp_path)
+        raise
 
 def main():
     ap = argparse.ArgumentParser(description="Batch retrain GRU4Rec using logged interactions.")
