@@ -17,27 +17,17 @@ from unittest.mock import Mock, patch, MagicMock
 from flask import session
 
 # Import the Flask app
-from app import app, recommender, log_event, add_history, get_history, add_to_cart
+from app import app, recommender, add_history, get_history, add_to_cart
 
 
 @pytest.fixture
 def client():
     """Create a Flask test client with app context."""
-    # Create a temporary file for interactions logging
-    with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as f:
-        temp_interactions = f.name
+    app.config['TESTING'] = True
+    app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow access in tests
     
-    # Patch the interactions path
-    with patch('app.INTERACTIONS_PATH', temp_interactions):
-        app.config['TESTING'] = True
-        app.config['SESSION_COOKIE_HTTPONLY'] = False  # Allow access in tests
-        
-        with app.test_client() as test_client:
-            yield test_client
-        
-        # Cleanup
-        if os.path.exists(temp_interactions):
-            os.remove(temp_interactions)
+    with app.test_client() as test_client:
+        yield test_client
 
 
 @pytest.fixture
@@ -110,12 +100,6 @@ class TestIndexRoute:
         response = client.get('/')
         assert response.status_code == 200
         # Should not crash on empty history
-
-    def test_index_route_logs_page_view(self, client, app_context):
-        """Verify / endpoint logs page_index event."""
-        with patch('app.log_event') as mock_log:
-            response = client.get('/')
-            assert response.status_code == 200
 
 
 # ============================================================================

@@ -14,7 +14,7 @@ import json
 import time
 import threading
 from unittest.mock import Mock, patch, MagicMock
-from app import app, log_event
+from app import app
 import os
 import tempfile
 
@@ -246,27 +246,7 @@ class TestDataConsistency:
             # Mock recommender enforces exclude_seen=True
             assert response.status_code in [200, 404]
     
-    def test_interactions_file_contains_logged_events(self, client, mock_recommender):
-        """Verify interactions are logged to CSV file."""
-        with patch('app.recommender', mock_recommender):
-            # Temporarily use a temp file for interactions
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
-                temp_path = f.name
-            
-            try:
-                with patch('app.INTERACTIONS_PATH', temp_path):
-                    # Add an item (should log interaction)
-                    response = client.get('/add_to_cart/5')
-                    assert response.status_code in [200, 302]
-                    
-                    # Check if file has content (interaction was logged)
-                    # Note: actual logging depends on app.log_event implementation
-                    file_exists = os.path.exists(temp_path)
-                    assert file_exists or response.status_code == 200
-            finally:
-                # Clean up
-                if os.path.exists(temp_path):
-                    os.unlink(temp_path)
+
     
     def test_session_persistence_across_requests(self, client, mock_recommender):
         """Session data should persist across multiple requests."""

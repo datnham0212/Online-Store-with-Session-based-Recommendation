@@ -1,7 +1,5 @@
 from flask import Flask, render_template, request, session, redirect, url_for, jsonify
 import os
-from datetime import datetime
-import csv
 from uuid import uuid4
 
 app = Flask(__name__, instance_relative_config=True)
@@ -39,25 +37,7 @@ except Exception as e:
     recommender = None
     print("Recommender import exception:", e)
 
-DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-INTERACTIONS_PATH = os.path.join(DATA_DIR, "interactions.csv")
-os.makedirs(DATA_DIR, exist_ok=True)
 
-ENABLE_VIEW_LOGGING = False
-
-def log_event(event_type, item_id=None, extra=None):
-    if event_type == "view" and not ENABLE_VIEW_LOGGING:
-        return
-    if event_type.startswith("view_") and not ENABLE_VIEW_LOGGING:
-        return
-    try:
-        with open(INTERACTIONS_PATH, "a", encoding="utf-8") as f:
-            ts = datetime.utcnow().isoformat()
-            sid = session.get("_id") or session.get("session_id") or ""
-            hist_len = len(session.get("history", []))
-            f.write(f"\n{ts},{sid},{event_type},{item_id or ''},{hist_len},{extra or ''}")
-    except Exception as e:
-        print("Log event failed:", e)
 
 def _build_products(limit=None, offset=0):
     if not (recommender and recommender.ok):
@@ -92,7 +72,6 @@ def add_history(pid):
     hist = session.get("history", [])
     hist.append(pid)
     session["history"] = hist
-    log_event("history_add", pid)
 
 def get_cart():
     return session.get("cart", {})
@@ -144,7 +123,6 @@ def index():
             rec_ids = [str(x) for x in rec_ids]
     # Do not fallback when history is empty; rec_ids will stay []
     recs = [_product_for_id(rid) for rid in rec_ids]      
-    log_event("page_index", extra="|".join(history[-5:]))
     print(f"[INDEX] products={len(PRODUCTS)} history={history} rec_ids={rec_ids}")
     return render_template("index.html", products=PRODUCTS, recommendations=recs)
 
@@ -161,12 +139,9 @@ def product_page(product_id):
         # keep cache from growing unbounded
         if len(RECOMMENDATIONS) > 500:
             RECOMMENDATIONS.pop()
-        log_event("view_product_stub", product_id)
 
     # record history and show product page
     add_history(product_id)
-    if ENABLE_VIEW_LOGGING:
-        log_event("view_product", product_id)
 
     # update recommender session and compute fresh recommendations
     sid = session.get("_id")
@@ -195,7 +170,6 @@ def product_page(product_id):
 def add_to_cart_route(product_id):
     add_to_cart(product_id)
     add_history(product_id)
-    log_event("add_to_cart", product_id)
     return redirect(url_for("cart"))
 
 @app.route("/remove_from_cart/<product_id>")
@@ -222,39 +196,18 @@ def cart():
 @app.route("/purchase", methods=["POST"])
 def purchase():
     session["purchased"] = get_cart_items_with_quantity()
-    for it in session["purchased"]:
-        log_event("purchase_add", it["id"])
     session["cart"] = {}
     return redirect(url_for("checkout"))
 
 @app.route("/checkout")
 def checkout():
-    log_event("page_checkout")
     return render_template("checkout.html", cart_items=session.get("purchased", []))
 
-# --- Added endpoints for explicit interaction logging ---
 
-@app.route("/log_click", methods=["POST"])
-def log_click():
-    data = request.get_json(silent=True) or {}
-    item_ids = data.get("item_ids")
-    if item_ids is None:
-        single = data.get("item_id")
-        item_ids = [single] if single else []
-    for iid in item_ids:
-        s = str(iid)
-        if s.endswith("_view"):
-            if ENABLE_VIEW_LOGGING:
-                log_event("view", s)
-            continue  # skip view logs when disabled
-        log_event("click", s)
-    return "", 204
 
 @app.route("/submit-checkout", methods=["POST"])
 def submit_checkout():
     purchased_items = session.get("purchased", [])
-    for item in purchased_items:
-        log_event("complete_transaction", item.get("id"))
     session["purchased"] = []
     return redirect(url_for("index"))
 

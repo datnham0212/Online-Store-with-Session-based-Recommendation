@@ -390,3 +390,16 @@ Intra-List Diversity: 0.4667
 
 ================================================================================
 
+# Dec 19 updates:
+Removed interaction logging and model retraining functionality:
+- Deleted web_demo/data/interactions.csv and data/ directory
+- Deleted web_demo/retrain_gru.py (no longer retraining on logged interactions)
+- Deleted web_demo/test_retrain_gru.py (test file for retrain module)
+- Removed log_event() function and all interaction logging calls from app.py
+- Removed /log_click endpoint (was used to log user interactions)
+- Removed all references to INTERACTIONS_PATH and ENABLE_VIEW_LOGGING from app.py
+- Removed interaction logging tests from test_app.py and test_e2e_integration.py
+- Web demo now focuses purely on: loading pretrained model → serving recommendations → no interaction data collection
+
+Rationale: Objectives do not include logging user interactions or retraining the model based on session data collected in the web demo. Model retraining is done offline with external datasets (Yoochoose, RetailRocket).
+
