@@ -1,0 +1,475 @@
+Ý nghĩa sơ đồ
+SessionDataset + collate_fn:
+Tạo sample từ phiên → gom batch → pad chuỗi → dùng cho DataLoader chuẩn.
+Tạo sample từ phiên → gom batch → pad chuỗi → đầu ra gồm input_ids, attention_mask, lengths, targets.
+Phù hợp với mô hình Transformer hoặc huấn luyện theo batch tĩnh.
+SessionParallelDataset:
+Duy trì nhiều phiên song song, sinh batch liên tục theo thời gian.
+Đầu ra gồm inputs, targets, session_ids, new_session_mask.
+Phù hợp với GRU4Rec/RNN, vì cần giữ trạng thái ẩn cho từng phiên.
+from typing import List, Tuple, Dict
+import torch
+from torch.utils.data import Dataset, IterableDataset, get_worker_info
+import numpy as np
+import math
+
+class SessionDataset(Dataset):
+    def __init__(self, sessions: List[List[int]], mode: str = 'all', max_seq_len: int = 50, pad_idx: int = 0, inplace_shuffle: bool = False):
+        assert mode in ('all', 'last')
+        self.sessions = sessions
+        self.mode = mode
+        self.max_seq_len = max_seq_len
+        self.pad_idx = pad_idx
+        self.inplace_shuffle = inplace_shuffle
+        self.samples: List[Tuple[List[int], int]] = []
+        for seq in self.sessions:
+            if self.mode == 'all':
+                for i in range(1, len(seq)):
+                    self.samples.append((seq[:i], int(seq[i])))
+            else:
+                self.samples.append((seq[:-1], int(seq[-1])))
+        if self.inplace_shuffle:
+            import random
+            random.shuffle(self.samples)
+    def __len__(self):
+        return len(self.samples)
+    def __getitem__(self, idx):
+        seq, target = self.samples[idx]
+        if len(seq) > self.max_seq_len:
+            seq = seq[-self.max_seq_len:]
+        return seq, int(target)
+
+def collate_fn(batch: List[Tuple[List[int], int]], pad_idx: int = 0, align: str = 'right') -> Dict[str, torch.Tensor]:
+    seqs, targets = zip(*batch)
+    tensors = [torch.tensor(s, dtype=torch.long) for s in seqs]
+    lengths = torch.tensor([t.size(0) for t in tensors], dtype=torch.long)
+    max_len = int(lengths.max().item())
+    padded = torch.full((len(tensors), max_len), fill_value=pad_idx, dtype=torch.long)
+    attention_mask = torch.zeros((len(tensors), max_len), dtype=torch.long)
+    for i, t in enumerate(tensors):
+        l = t.size(0)
+        if align == 'right':
+            padded[i, max_len - l: max_len] = t
+            attention_mask[i, max_len - l: max_len] = 1
+        else:
+            padded[i, :l] = t
+            attention_mask[i, :l] = 1
+    return {
+        'input_ids': padded,
+        'attention_mask': attention_mask,
+        'lengths': lengths,
+        'targets': torch.tensor(targets, dtype=torch.long)
+    }
+
+class SessionParallelDataset(IterableDataset):
+    def __init__(self, sessions: List[List[int]], batch_size: int = 512, shuffle: bool = True):
+        assert all(len(s) >= 2 for s in sessions), "All sessions must have length >= 2"
+        self.sessions = sessions
+        self.batch_size = batch_size
+        self.shuffle = shuffle
+    def _generator(self, sessions: List[List[int]]):
+        order = np.arange(len(sessions))
+        if self.shuffle:
+            np.random.shuffle(order)
+        q_ptr = 0
+        active = []
+        pos = []
+        session_idx = []
+        while q_ptr < len(order) and len(active) < self.batch_size:
+            sidx = order[q_ptr]
+            q_ptr += 1
+            active.append(sessions[sidx])
+            pos.append(0)
+            session_idx.append(sidx)
+        if len(active) == 0:
+            return
+        new_mask = np.ones(len(active), dtype=np.bool_)
+        while len(active) > 0:
+            B = len(active)
+            inputs = np.empty(B, dtype=np.int64)
+            targets = np.empty(B, dtype=np.int64)
+            for i in range(B):
+                inputs[i] = active[i][pos[i]]
+                targets[i] = active[i][pos[i] + 1]
+            batch = {
+                'inputs': torch.from_numpy(inputs).long(),
+                'targets': torch.from_numpy(targets).long(),
+                'session_ids': torch.tensor(session_idx, dtype=torch.long),
+                'new_session_mask': torch.from_numpy(new_mask)
+            }
+            yield batch
+            new_mask = np.zeros(B, dtype=np.bool_)
+            remove_indices = []
+            for i in range(B):
+                pos[i] += 1
+                if pos[i] >= len(active[i]) - 1:
+                    if q_ptr < len(order):
+                        sidx = order[q_ptr]
+                        q_ptr += 1
+                        active[i] = sessions[sidx]
+                        pos[i] = 0
+                        session_idx[i] = sidx
+                        new_mask[i] = True
+                    else:
+                        remove_indices.append(i)
+            if remove_indices:
+                for i in reversed(remove_indices):
+                    active.pop(i)
+                    pos.pop(i)
+                    session_idx.pop(i)
+                if len(new_mask) > 0:
+                    new_mask = new_mask[:len(active)]
+    def __iter__(self):
+        worker_info = get_worker_info()
+        if worker_info is None:
+            sessions = self.sessions
+        else:
+            per_worker = int(math.ceil(len(self.sessions) / float(worker_info.num_workers)))
+            start = worker_info.id * per_worker
+            end = min(start + per_worker, len(self.sessions))
+            sessions = self.sessions[start:end]
+        return self._generator(sessions)
+
+
+Đoạn code batching_datasets.py này định nghĩa các lớp và hàm để chuẩn bị dữ liệu phiên (session-based data) thành batch cho mô hình học sâu (ví dụ GRU4Rec hoặc Transformer). Nó có hai cách batching: theo Dataset chuẩn và theo IterableDataset song song.
+Giải thích chi tiết
+1. SessionDataset (Dataset chuẩn)
+python
+class SessionDataset(Dataset): def __init__(self, sessions: List[List[int]], mode: str = 'all', max_seq_len: int = 50, pad_idx: int = 0, inplace_shuffle: bool = False): ...
+Input: danh sách các phiên, mỗi phiên là một list item_id (đã ánh xạ sang số nguyên).
+Tham số:
+mode:
+'all': tạo sample cho mọi bước trong phiên (predict item tiếp theo).
+'last': chỉ tạo sample từ toàn bộ phiên để dự đoán item cuối cùng.
+max_seq_len: giới hạn độ dài chuỗi đầu vào.
+pad_idx: giá trị dùng để padding.
+inplace_shuffle: nếu True, shuffle các sample ngay khi khởi tạo.
+Cách hoạt động:
+Với mỗi phiên seq:
+Nếu mode='all': tạo nhiều sample (seq[:i], seq[i]).
+Nếu mode='last': chỉ tạo (seq[:-1], seq[-1]).
+Lưu tất cả sample vào self.samples.
+__len__: trả về số sample.
+__getitem__: lấy một sample (sequence, target), cắt chuỗi nếu dài hơn max_seq_len.
+Đây là cách chuẩn bị dữ liệu huấn luyện cho mô hình dự đoán item tiếp theo.
+2. collate_fn (hàm gom batch)
+python
+def collate_fn(batch: List[Tuple[List[int], int]], pad_idx: int = 0, align: str = 'right') -> Dict[str, torch.Tensor]: ...
+Input: một batch gồm nhiều (sequence, target).
+Output: dictionary chứa tensor:
+input_ids: ma trận padded (chuỗi được căn chỉnh).
+attention_mask: mask để phân biệt padding và token thật.
+lengths: độ dài thực của từng chuỗi.
+targets: item mục tiêu cần dự đoán.
+Cách hoạt động:
+Tìm độ dài lớn nhất trong batch (max_len).
+Tạo tensor padded với giá trị pad_idx.
+Nếu align='right': căn chuỗi về bên phải (padding ở đầu).
+Nếu align='left': căn chuỗi về bên trái (padding ở cuối).
+Đây là hàm chuẩn bị batch cho mô hình (giống DataLoader trong PyTorch).
+3. SessionParallelDataset (IterableDataset song song)
+python
+class SessionParallelDataset(IterableDataset): def __init__(self, sessions: List[List[int]], batch_size: int = 512, shuffle: bool = True): ...
+Input: danh sách các phiên.
+Tham số:
+batch_size: số phiên xử lý song song.
+shuffle: có xáo trộn thứ tự phiên hay không.
+Cách hoạt động (_generator):
+Khởi tạo một tập phiên đang hoạt động (active).
+Với mỗi bước trong phiên:
+Lấy item hiện tại làm input.
+Lấy item tiếp theo làm target.
+Tạo batch gồm:
+inputs: item hiện tại.
+targets: item tiếp theo.
+session_ids: ID phiên tương ứng.
+new_session_mask: mask đánh dấu phiên mới bắt đầu.
+Khi một phiên kết thúc:
+Nếu còn phiên chưa dùng → thay thế bằng phiên mới.
+Nếu không còn → loại bỏ khỏi batch.
+Lặp cho đến khi hết phiên.
+__iter__: hỗ trợ multi-worker trong DataLoader.
+Chia dữ liệu cho từng worker nếu có nhiều worker.
+Trả về generator _generator.
+Đây là cách xử lý dữ liệu phiên song song – rất hữu ích cho mô hình RNN/GRU, vì ta cần duy trì trạng thái ẩn cho nhiều phiên cùng lúc.
+Ý tưởng chính
+SessionDataset + collate_fn: dùng cho huấn luyện kiểu “next-item prediction” với batch chuẩn.
+SessionParallelDataset: dùng cho huấn luyện song song nhiều phiên, giữ trạng thái ẩn liên tục, phù hợp với GRU4Rec.
+Nói ngắn gọn: batching_datasets.py cung cấp hai cách tạo batch dữ liệu phiên – một cách đơn giản (SessionDataset + collate_fn) và một cách song song (SessionParallelDataset) – để phục vụ huấn luyện mô hình gợi ý tuần tự.
+
+Ý nghĩa sơ đồ:
+Item đầu vào được ánh xạ thành vector embedding.
+Vector này đi qua các tầng GRU để cập nhật trạng thái ẩn.
+Hidden state cuối cùng đi qua Linear head để dự đoán phân phối xác suất trên toàn bộ vocab.
+import torch
+import torch.nn as nn
+from typing import Optional
+
+class SessionGRUModel(nn.Module):
+    def __init__(self, vocab_size: int, emb_dim: int = 128, hidden_size: int = 128, num_layers: int = 1, padding_idx: Optional[int] = None):
+        super().__init__()
+        self.emb = nn.Embedding(vocab_size, emb_dim, padding_idx=padding_idx)
+        self.num_layers = num_layers
+        self.hidden_size = hidden_size
+        self.gru_cells = nn.ModuleList([nn.GRUCell(emb_dim if i == 0 else hidden_size, hidden_size) for i in range(num_layers)])
+        self.head = nn.Linear(hidden_size, vocab_size)
+    def forward_step(self, inputs: torch.LongTensor, hidden: torch.Tensor):
+        emb = self.emb(inputs)
+        h = emb
+        new_hidden_layers = []
+        for layer_idx in range(self.num_layers):
+            cell = self.gru_cells[layer_idx]
+            h_prev = hidden[layer_idx]
+            h_new = cell(h, h_prev)
+            new_hidden_layers.append(h_new.unsqueeze(0))
+            h = h_new
+        new_hidden = torch.cat(new_hidden_layers, dim=0)
+        logits = self.head(h_new)
+        return logits, new_hidden
+
+
+Đoạn code từ batching_models.py định nghĩa một mô hình GRU cho dữ liệu phiên (SessionGRUModel) trong PyTorch. Đây là một mạng nơ-ron hồi tiếp (RNN) dùng GRUCell để dự đoán item tiếp theo trong một phiên.
+Giải thích chi tiết
+Imports
+torch, torch.nn: thư viện PyTorch để xây dựng mô hình.
+Optional: kiểu dữ liệu từ typing để cho phép tham số có thể là None.
+Lớp SessionGRUModel(nn.Module)
+Kế thừa từ nn.Module – lớp cơ bản cho mọi mô hình PyTorch.
+__init__
+python
+def __init__(self, vocab_size: int, emb_dim: int = 128, hidden_size: int = 128, num_layers: int = 1, padding_idx: Optional[int] = None): super().__init__() self.emb = nn.Embedding(vocab_size, emb_dim, padding_idx=padding_idx) self.num_layers = num_layers self.hidden_size = hidden_size self.gru_cells = nn.ModuleList([nn.GRUCell(emb_dim if i == 0 else hidden_size, hidden_size) for i in range(num_layers)]) self.head = nn.Linear(hidden_size, vocab_size)
+Tham số:
+vocab_size: số lượng item (kích thước từ vựng).
+emb_dim: kích thước vector embedding cho item.
+hidden_size: kích thước trạng thái ẩn của GRU.
+num_layers: số tầng GRU.
+padding_idx: chỉ số dùng cho padding trong embedding.
+Thành phần mô hình:
+self.emb: lớp embedding ánh xạ item_id → vector liên tục.
+self.gru_cells: danh sách các tầng GRUCell.
+Tầng đầu tiên nhận embedding làm input.
+Các tầng sau nhận hidden state từ tầng trước.
+self.head: lớp tuyến tính ánh xạ hidden state cuối cùng → phân phối xác suất trên toàn bộ vocab (logits).
+forward_step
+python
+def forward_step(self, inputs: torch.LongTensor, hidden: torch.Tensor): emb = self.emb(inputs) h = emb new_hidden_layers = [] for layer_idx in range(self.num_layers): cell = self.gru_cells[layer_idx] h_prev = hidden[layer_idx] h_new = cell(h, h_prev) new_hidden_layers.append(h_new.unsqueeze(0)) h = h_new new_hidden = torch.cat(new_hidden_layers, dim=0) logits = self.head(h_new) return logits, new_hidden
+Input:
+inputs: tensor chứa item hiện tại (chỉ số).
+hidden: trạng thái ẩn của các tầng GRU (tensor có shape [num_layers, batch_size, hidden_size]).
+Quy trình:
+Embedding: chuyển inputs thành vector emb.
+Lan truyền qua các tầng GRU:
+Với mỗi tầng, lấy trạng thái ẩn trước đó h_prev.
+Tính trạng thái mới h_new = GRUCell(h, h_prev).
+Lưu lại h_new vào danh sách new_hidden_layers.
+Cập nhật h = h_new để truyền cho tầng tiếp theo.
+Ghép trạng thái ẩn mới: new_hidden = torch.cat(...).
+Dự đoán item tiếp theo:
+Dùng self.head(h_new) để tính logits (vector kích thước vocab_size).
+logits là điểm số cho từng item trong vocab.
+Output:
+logits: phân phối xác suất dự đoán item tiếp theo.
+new_hidden: trạng thái ẩn mới của tất cả các tầng GRU.
+Ý tưởng chính
+Mô hình này nhận item hiện tại và hidden state,
+cập nhật hidden state qua GRU,
+dự đoán item tiếp theo bằng một lớp tuyến tính.
+Đây là kiến trúc cơ bản cho session-based recommendation (ví dụ GRU4Rec).
+Nói ngắn gọn: SessionGRUModel là một mô hình GRU nhiều tầng, dùng embedding để biểu diễn item, GRUCell để cập nhật trạng thái phiên, và Linear head để dự đoán item tiếp theo.
+
+Ý nghĩa sơ đồ:
+Prefix-based: tạo sample từ prefix của phiên, gom batch, pad chuỗi → phù hợp với Transformer hoặc huấn luyện theo batch tĩnh.
+Session-parallel: duy trì nhiều phiên song song, sinh batch liên tục, giữ hidden state → phù hợp với GRU4Rec/RNN.
+Cả hai đều đưa batch vào mô hình GRU để dự đoán item tiếp theo.
+from batching_utils import load_sessions_from_dat
+from batching_datasets import SessionDataset, SessionParallelDataset, collate_fn
+from batching_models import SessionGRUModel
+import torch
+from torch.utils.data import DataLoader
+import os  # added import
+
+if __name__ == '__main__':
+    # Đọc 2 file sẽ rất lâu, nên chia ra đọc từng file một
+    # Đọc phiên từ file train của Yoochoose
+    yoochoose_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'input_data', 'yoochoose-data', 'yoochoose_train_full.dat'))
+    try:
+        yoochoose_sessions = load_sessions_from_dat(yoochoose_path, item_idx_col='item_idx', min_session_length=2)
+        print(f'Số phiên Yoochoose train: {len(yoochoose_sessions)}')
+    except Exception as e:
+        print('Không đọc được file Yoochoose:', e)
+        yoochoose_sessions = [[1,5,8,3],[2,4,6],[3,8,9,10,2],[2,7,2,9]]
+
+    # Chọn dữ liệu để chạy demo (ở đây dùng Yoochoose, có thể đổi sang retailrocket_sessions)
+    sessions = yoochoose_sessions
+
+    # --- Prefix-based approach ---
+    ds = SessionDataset(sessions, mode='all', max_seq_len=50, pad_idx=0, inplace_shuffle=True)
+    loader = DataLoader(ds, batch_size=64, shuffle=True, collate_fn=lambda batch: collate_fn(batch, pad_idx=0, align='right'), num_workers=0)
+    for batch in loader:
+        print('Prefix batch shapes:', batch['input_ids'].shape, batch['attention_mask'].shape, batch['targets'].shape)
+        break
+
+    # --- Session-parallel approach ---
+    sp_ds = SessionParallelDataset(sessions, batch_size=2, shuffle=False)
+    sp_loader = DataLoader(sp_ds, batch_size=None, num_workers=0)
+    vocab_size = max(max(s) for s in sessions) + 1
+    model = SessionGRUModel(vocab_size=vocab_size, emb_dim=64, hidden_size=64, num_layers=1)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    hidden = torch.zeros(model.num_layers, 2, model.hidden_size)
+    for i, batch in enumerate(sp_loader):
+        inputs = batch['inputs'].to(device)
+        targets = batch['targets'].to(device)
+        new_mask = batch['new_session_mask'].to(device).bool()
+        hidden[:, new_mask, :] = 0.0
+        logits, hidden = model.forward_step(inputs.to(device), hidden.to(device))
+        print('Session-parallel batch', i, 'inputs', inputs.shape, 'targets', targets.shape, 'logits', logits.shape)
+        if i >= 5:
+            break
+    print('Done example run')
+
+
+Đoạn code batching_demo.py này là một script minh họa cách sử dụng hai phương pháp batching dữ liệu phiên (session-based data) để huấn luyện hoặc chạy thử mô hình GRU cho gợi ý tuần tự. Nó kết nối các thành phần đã xây dựng trong các file khác (batching_utils, batching_datasets, batching_models).
+Giải thích từng phần
+Imports
+load_sessions_from_dat: hàm tiện ích để đọc dữ liệu phiên từ file .dat.
+SessionDataset, SessionParallelDataset, collate_fn: các lớp/hàm tạo batch dữ liệu từ batching_datasets.py.
+SessionGRUModel: mô hình GRU cho dữ liệu phiên từ batching_models.py.
+torch, DataLoader: PyTorch để huấn luyện và quản lý batch.
+os: xử lý đường dẫn file.
+Đọc dữ liệu Yoochoose
+python
+yoochoose_path = os.path.abspath(...) try: yoochoose_sessions = load_sessions_from_dat(yoochoose_path, item_idx_col='item_idx', min_session_length=2) print(f'Số phiên Yoochoose train: {len(yoochoose_sessions)}') except Exception as e: print('Không đọc được file Yoochoose:', e) yoochoose_sessions = [[1,5,8,3],[2,4,6],[3,8,9,10,2],[2,7,2,9]]
+Cố gắng đọc file yoochoose_train_full.dat.
+Nếu không đọc được → dùng dữ liệu giả định (một vài phiên nhỏ).
+Chọn dữ liệu demo
+python
+sessions = yoochoose_sessions
+Dùng dữ liệu Yoochoose làm demo (có thể thay bằng RetailRocket).
+Prefix-based approach (batching theo prefix)
+python
+ds = SessionDataset(sessions, mode='all', max_seq_len=50, pad_idx=0, inplace_shuffle=True) loader = DataLoader(ds, batch_size=64, shuffle=True, collate_fn=lambda batch: collate_fn(batch, pad_idx=0, align='right'), num_workers=0) for batch in loader: print('Prefix batch shapes:', batch['input_ids'].shape, batch['attention_mask'].shape, batch['targets'].shape) break
+Tạo dataset từ các phiên: mỗi sample là (prefix, target) để dự đoán item tiếp theo.
+Dùng DataLoader gom batch, pad chuỗi bằng collate_fn.
+In ra shape của batch:
+input_ids: ma trận padded.
+attention_mask: mask cho padding.
+targets: item mục tiêu.
+Chỉ chạy một batch demo.
+Đây là cách batching theo prefix – phù hợp với Transformer hoặc huấn luyện theo batch tĩnh.
+Session-parallel approach (batching song song)
+python
+sp_ds = SessionParallelDataset(sessions, batch_size=2, shuffle=False) sp_loader = DataLoader(sp_ds, batch_size=None, num_workers=0) vocab_size = max(max(s) for s in sessions) + 1 model = SessionGRUModel(vocab_size=vocab_size, emb_dim=64, hidden_size=64, num_layers=1) device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') model.to(device) hidden = torch.zeros(model.num_layers, 2, model.hidden_size)
+Tạo dataset song song: mỗi batch gồm nhiều phiên đang hoạt động đồng thời.
+batch_size=2: xử lý 2 phiên song song.
+Tạo mô hình GRU với embedding và hidden size = 64.
+Chọn thiết bị (GPU nếu có).
+Khởi tạo hidden state cho 2 phiên.
+Chạy qua các batch song song
+python
+for i, batch in enumerate(sp_loader): inputs = batch['inputs'].to(device) targets = batch['targets'].to(device) new_mask = batch['new_session_mask'].to(device).bool() hidden[:, new_mask, :] = 0.0 logits, hidden = model.forward_step(inputs.to(device), hidden.to(device)) print('Session-parallel batch', i, 'inputs', inputs.shape, 'targets', targets.shape, 'logits', logits.shape) if i >= 5: break
+Với mỗi batch:
+inputs: item hiện tại.
+targets: item tiếp theo.
+new_session_mask: đánh dấu phiên mới bắt đầu → reset hidden state.
+Chạy forward_step của mô hình GRU để dự đoán.
+In ra shape của inputs, targets, logits.
+Chỉ chạy 6 batch demo.
+Kết thúc
+python
+print('Done example run')
+In thông báo hoàn tất demo.
+Ý tưởng chính
+Script này minh họa hai cách batching dữ liệu phiên:
+Prefix-based: tạo sample từ prefix của phiên, gom batch, pad chuỗi.
+Session-parallel: duy trì nhiều phiên song song, cập nhật hidden state liên tục.
+Sau đó chạy thử mô hình GRU để thấy cách batch được xử lý.
+Nói ngắn gọn: batching_demo.py là một demo cho thấy cách chuẩn bị dữ liệu phiên bằng hai phương pháp batching (prefix-based và session-parallel), rồi chạy thử mô hình GRU để dự đoán item tiếp theo.
+
+import pandas as pd
+from typing import List
+
+def load_sessions_from_dat(path: str, item_idx_col: str = 'item_idx', min_session_length: int = 2) -> List[List[int]]:
+    """Read a .dat/.csv file containing session_id,timestamp,item_idx and return list of sessions (list of item_idx).
+    Expect file to have columns: 'session_id', 'timestamp', and either 'item_idx' (preferred) or 'item_id' if you map externally.
+    """
+    df = pd.read_csv(path, sep=None, engine='python', dtype={'session_id': str})
+    if item_idx_col not in df.columns:
+        raise KeyError(f"Column {item_idx_col} not found in {path}. Expected 'item_idx'.")
+    if 'timestamp' in df.columns:
+        df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+        df = df.dropna(subset=['timestamp'])
+        df = df.sort_values(['session_id', 'timestamp'])
+    else:
+        df = df.sort_values(['session_id'])
+    grouped = df.groupby('session_id')[item_idx_col].apply(list)
+    sessions = [list(map(int, s)) for s in grouped.tolist() if len(s) >= min_session_length]
+    return sessions
+
+if __name__ == '__main__':
+    # đọc phiên dữ liệu từ file train Yoochoose
+    yoochoose_path = r'D:/output_data/yoochoose_train_tr.dat'
+    yoochoose_sessions = load_sessions_from_dat(yoochoose_path, item_idx_col='item_idx', min_session_length=2)
+    print(f'Số phiên Yoochoose train: {len(yoochoose_sessions)}')
+    print('Ví dụ một phiên Yoochoose:', yoochoose_sessions[0] if yoochoose_sessions else 'Không có phiên nào')
+
+    # đọc phiên dữ liệu từ file train Retail Rocket
+    # retailrocket_path = r'd:/output_data/retailrocket_train_tr.dat'
+    # retailrocket_sessions = load_sessions_from_dat(retailrocket_path, item_idx_col='item_idx', min_session_length=2)
+    # print(f'Số phiên Retail Rocket train: {len(retailrocket_sessions)}')
+    # print('Ví dụ một phiên Retail Rocket:', retailrocket_sessions[0] if retailrocket_sessions else 'Không có phiên nào')
+
+
+Đoạn code này định nghĩa hàm load_sessions_from_dat để đọc dữ liệu phiên từ file .dat hoặc .csv (ví dụ Yoochoose, Retail Rocket), sau đó gom các item theo từng phiên và trả về danh sách các phiên dưới dạng list các item index.
+Giải thích chi tiết
+Hàm load_sessions_from_dat
+python
+def load_sessions_from_dat(path: str, item_idx_col: str = 'item_idx', min_session_length: int = 2) -> List[List[int]]:
+Tham số:
+path: đường dẫn tới file dữ liệu (.dat hoặc .csv).
+item_idx_col: tên cột chứa chỉ số item (mặc định là item_idx).
+min_session_length: độ dài tối thiểu của một phiên (mặc định là 2).
+Đọc dữ liệu
+python
+df = pd.read_csv(path, sep=None, engine='python', dtype={'session_id': str})
+Dùng pandas.read_csv để đọc file.
+sep=None, engine='python': tự động đoán ký tự phân cách.
+session_id được đọc dưới dạng chuỗi.
+Kiểm tra cột item
+python
+if item_idx_col not in df.columns: raise KeyError(f"Column {item_idx_col} not found in {path}. Expected 'item_idx'.")
+Nếu file không có cột item_idx → báo lỗi.
+Xử lý timestamp
+python
+if 'timestamp' in df.columns: df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce') df = df.dropna(subset=['timestamp']) df = df.sort_values(['session_id', 'timestamp']) else: df = df.sort_values(['session_id'])
+Nếu có cột timestamp:
+Chuyển sang kiểu datetime.
+Loại bỏ dòng không hợp lệ.
+Sắp xếp theo session_id và timestamp.
+Nếu không có timestamp: chỉ sắp xếp theo session_id.
+Gom nhóm theo session
+python
+grouped = df.groupby('session_id')[item_idx_col].apply(list)
+Gom các item theo từng session_id.
+Mỗi session là một list item index.
+Lọc session ngắn
+python
+sessions = [list(map(int, s)) for s in grouped.tolist() if len(s) >= min_session_length]
+Chuyển item sang kiểu int.
+Chỉ giữ lại session có độ dài ≥ min_session_length.
+Trả về danh sách các phiên.
+Khối __main__
+python
+if __name__ == '__main__': yoochoose_path = r'D:/output_data/yoochoose_train_tr.dat' yoochoose_sessions = load_sessions_from_dat(yoochoose_path, item_idx_col='item_idx', min_session_length=2) print(f'Số phiên Yoochoose train: {len(yoochoose_sessions)}') print('Ví dụ một phiên Yoochoose:', yoochoose_sessions[0] if yoochoose_sessions else 'Không có phiên nào')
+Đọc dữ liệu từ file train của Yoochoose.
+In ra số lượng phiên và ví dụ một phiên.
+python
+`# retailrocket_path = r'd:/output_data/retailrocket_train_tr.dat'
+retailrocket_sessions = load_sessions_from_dat(retailrocket_path, item_idx_col='item_idx', min_session_length=2)
+print(f'Số phiên Retail Rocket train: {len(retailrocket_sessions)}')
+print('Ví dụ một phiên Retail Rocket:', retailrocket_sessions[0] if retailrocket_sessions else 'Không có phiên nào')`
+Đoạn này minh họa cách đọc dữ liệu Retail Rocket (đang comment).
+Ý tưởng chính
+Hàm này chuẩn hóa dữ liệu từ file .dat/.csv thành list các phiên, mỗi phiên là một list item index.
+Đây là bước chuẩn bị dữ liệu đầu vào cho mô hình gợi ý tuần tự (GRU4Rec, Transformer).
+Nói ngắn gọn: load_sessions_from_dat đọc file dữ liệu phiên, gom item theo session_id, sắp xếp theo thời gian, lọc session ngắn, và trả về danh sách các phiên để dùng cho huấn luyện mô hình gợi ý.

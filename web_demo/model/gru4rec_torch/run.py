@@ -148,6 +148,10 @@ if args.test is not None:
             print('Catalog coverage: {:.6f}'.format(res['catalog_coverage']))
         if 'ild' in res:
             print('ILD: {:.6f}'.format(res['ild']))
+        if 'aggregate_diversity' in res:
+            print('Aggregate diversity: {:.6f}'.format(res['aggregate_diversity']))
+        if 'inter_user_diversity' in res:
+            print('Inter-user diversity: {:.6f}'.format(res['inter_user_diversity']))
 
         # Ghi lại chỉ số chính nếu được chỉ định
         if args.log_primary_metric: 

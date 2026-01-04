@@ -403,3 +403,158 @@ Removed interaction logging and model retraining functionality:
 
 Rationale: Objectives do not include logging user interactions or retraining the model based on session data collected in the web demo. Model retraining is done offline with external datasets (Yoochoose, RetailRocket).
 
+# Dec 28 updates:
+First time:
+=========================================
+ RETAILROCKET - WINNING PARAMETERS TEST  
+=========================================
+
+Configuration:
+  Dataset: RetailRocket (full)
+  Loss: bpr-max
+  Layers: 224
+  Batch Size: 80
+  Learning Rate: 0.05
+  BPR Regularization: 1.95
+  Epochs: 10
+  Metrics: Recall@1, @5, @10, @20        
+
+Training model...
+
+Đang tạo mô hình GRU4Rec trên thiết bị "cpu"
+ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
+ĐẶT   constrained_embedding   THÀNH   True      (kiểu: <class 'bool'>)
+ĐẶT   embedding               THÀNH   0         (kiểu: <class 'int'>)
+ĐẶT   elu_param               THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   layers                  THÀNH   [224]     (kiểu: <class 'list'>)
+ĐẶT   n_epochs                THÀNH   10        (kiểu: <class 'int'>)
+ĐẶT   batch_size              THÀNH   80        (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.05      (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.05      (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.4       (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   2048      (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.4       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   1.95      (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   0.0       (kiểu: <class 'float'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 3.03 giây
+Đã tạo bộ lưu trữ mẫu với 4882 lô mẫu
+Epoch1 --> mất mát: 0.490686    (189.73s)       [52.82 mb/s | 4226 e/s]
+Epoch2 --> mất mát: 0.394422    (192.85s)       [51.97 mb/s | 4157 e/s]
+Epoch3 --> mất mát: 0.357239    (184.81s)       [54.23 mb/s | 4338 e/s]
+Epoch4 --> mất mát: 0.336038    (186.81s)       [53.65 mb/s | 4292 e/s]
+Epoch5 --> mất mát: 0.322525    (169.68s)       [59.06 mb/s | 4725 e/s]
+Epoch6 --> mất mát: 0.313286    (170.15s)       [58.90 mb/s | 4712 e/s]
+Epoch7 --> mất mát: 0.306358    (169.96s)       [58.97 mb/s | 4717 e/s]
+Epoch8 --> mất mát: 0.301304    (178.29s)       [56.21 mb/s | 4497 e/s]
+Epoch9 --> mất mát: 0.297041    (180.43s)       [55.55 mb/s | 4444 e/s]
+Epoch10 --> mất mát: 0.293718   (194.79s)       [51.45 mb/s | 4116 e/s]
+Thời gian huấn luyện tổng cộng: 1850.04s
+Đang lưu mô hình đã huấn luyện vào: output_data/retailrocket_bprmax_winning_final.pt        
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 44910 events
+Filtered test data: 44129 events (removed 781 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 19777
+Items in both: 19289
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.08 giây
+Đánh giá mất 38.51s
+Recall@1: 0.115693 MRR@1: 0.115693
+Recall@5: 0.284102 MRR@5: 0.175604
+Recall@10: 0.372680 MRR@10: 0.187390
+Recall@20: 0.460009 MRR@20: 0.193455
+Item coverage: 0.550701
+Catalog coverage: 1.000000
+ILD: 0.609921
+
+=========================================
+ TRAINING COMPLETE
+=========================================
+
+Second time:
+=========================================
+ RETAILROCKET - WINNING PARAMETERS TEST  
+=========================================
+
+Configuration:
+  Dataset: RetailRocket (full)
+  Loss: bpr-max
+  Layers: 224
+  Batch Size: 80
+  Learning Rate: 0.05
+  BPR Regularization: 1.95       
+  Epochs: 10
+  Metrics: Recall@1, @5, @10, @20
+
+Training model...
+
+Đang tạo mô hình GRU4Rec trên thiết bị "cpu"
+ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
+ĐẶT   constrained_embedding   THÀNH   True      (kiểu: <class 'bool'>)
+ĐẶT   embedding               THÀNH   0         (kiểu: <class 'int'>)
+ĐẶT   elu_param               THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   layers                  THÀNH   [224]     (kiểu: <class 'list'>)
+ĐẶT   n_epochs                THÀNH   10        (kiểu: <class 'int'>)
+ĐẶT   batch_size              THÀNH   80        (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.05      (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.05      (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.4       (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   2048      (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.4       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   1.95      (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   0.0       (kiểu: <class 'float'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 4.20 giây
+Đã tạo bộ lưu trữ mẫu với 4882 lô mẫu
+Epoch1 --> mất mát: 0.490715    (223.77s)       [44.79 mb/s | 3583 e/s]
+Epoch2 --> mất mát: 0.394413    (220.85s)       [45.38 mb/s | 3630 e/s]
+Epoch3 --> mất mát: 0.357210    (218.44s)       [45.88 mb/s | 3670 e/s]
+Epoch4 --> mất mát: 0.336137    (219.52s)       [45.65 mb/s | 3652 e/s]
+Epoch5 --> mất mát: 0.322523    (214.66s)       [46.69 mb/s | 3735 e/s]
+Epoch6 --> mất mát: 0.313393    (212.38s)       [47.19 mb/s | 3775 e/s]
+Epoch7 --> mất mát: 0.306428    (211.11s)       [47.47 mb/s | 3798 e/s]
+Epoch8 --> mất mát: 0.301348    (219.01s)       [45.76 mb/s | 3661 e/s]
+Epoch9 --> mất mát: 0.297212    (225.14s)       [44.51 mb/s | 3561 e/s]
+Epoch10 --> mất mát: 0.293761   (211.84s)       [47.31 mb/s | 3785 e/s]
+Thời gian huấn luyện tổng cộng: 2222.74s
+Đang lưu mô hình đã huấn luyện vào: output_data/retailrocket_bprmax_winning_final.pt        
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 44910 events
+Filtered test data: 44129 events (removed 781 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 19777
+Items in both: 19289
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.10 giây
+Đánh giá mất 2421.17s
+Recall@1: 0.118344 MRR@1: 0.118344
+Recall@5: 0.283988 MRR@5: 0.176917
+Recall@10: 0.370408 MRR@10: 0.188469
+Recall@20: 0.458343 MRR@20: 0.194598
+Item coverage: 0.549652
+Catalog coverage: 1.000000
+ILD: 0.611025
+Aggregate diversity: 0.549652
+Inter-user diversity: 0.998468
+
+=========================================
+ TRAINING COMPLETE
+=========================================
+Results saved to: output_data/retailrocket_bprmax_winning_final.pt
+
+
