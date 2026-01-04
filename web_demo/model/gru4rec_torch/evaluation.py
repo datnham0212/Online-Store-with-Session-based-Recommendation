@@ -77,7 +77,7 @@ from datasketch import MinHash, MinHashLSH
 from tqdm import tqdm
 import numpy as np
 
-def inter_user_diversity_lsh(topk_preds, num_perm=128, lsh_threshold=0.5, sample_size=10000):
+def inter_user_diversity_lsh(topk_preds, num_perm=128, lsh_threshold=0.0, sample_size=10000):
     """
     Approximate inter-user diversity using MinHash + LSH, with optional sampling for speed.
     
