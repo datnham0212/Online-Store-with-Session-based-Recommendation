@@ -558,3 +558,111 @@ Inter-user diversity: 0.998468
 Results saved to: output_data/retailrocket_bprmax_winning_final.pt
 
 
+# Jan 5th 2026
+- GRU4Rec là mô hình từ năm 2016 (gần 10 năm trước), đã có nhiều cải tiến vượt trội như BERT4Rec, SASRec, SR-GNN.
+- Nên thêm phần so sánh GRU4Rec với ít nhất 1-2 mô hình hiện đại hơn (Transformer-based)
+Hoặc đề xuất cải tiến nhỏ cho GRU4Rec (ví dụ: attention mechanism, multi-behavior modeling)
+<!-- - Cần thêm baseline như Item-KNN, FPMC, hoặc ít nhất là LSTM (Có KNN rồi) -->
+<!-- - Cần làm rõ: mỗi phiên test có bao nhiêu bước dự đoán? Dùng toàn bộ phiên hay chỉ item cuối? -->
+<!-- - Kết quả thực nghiệm chưa có độ lệch chuẩn (standard deviation). Không rõ các thí nghiệm được chạy bao nhiêu lần (random seeds) -->
+<!-- - Thiếu các câu hỏi nghiên cứu nhé. Ví dụ:
+  + RQ1: GRU4Rec đạt hiệu suất như thế nào trên bài toán SBRS?
+  + RQ2: Ảnh hưởng của loss functions (CE vs BPR) như thế nào?
+  + RQ3: Các yếu tố nào ảnh hưởng đến hiệu suất (layer size, batch, epochs)? -->
+
+- Vài ý để làm cho ngon hơn:
+Về việc cải tiến mô hình
+Multi-behavior GRU4Rec:
+Kết hợp click + add-to-cart + purchase (đã có trong Retail Rocket)
+Gán trọng số khác nhau cho từng loại hành vi
+
+Attention-enhanced GRU4Rec:
+Thêm attention layer để học tầm quan trọng của từng item trong session
+Đơn giản hơn Transformer nhưng hiệu quả hơn GRU thuần
+
+Category-aware GRU4Rec:
+Kết hợp thông tin category/metadata của sản phẩm
+Giải quyết cold-start cho item mới
+
+
+# Jan 9 2026: Giải thích cho implementation batching cũ 
+PHÂN TÍCH KHO GTRÚC & LƯU TRỮ MÃ BATCHING
+=========================================
+
+Bạn đã phát hiện ra điều gì đó **rất quan trọng** - quan sát tuyệt vời!
+
+**Triển khai thực tế nằm trong 4 tệp đó**, nhưng tôi đã bỏ qua chúng. Hãy phân tích những gì chúng thực sự làm:
+
+1. **`batching_datasets.py`** - `SessionParallelDataset` 
+   - Quản lý các phiên hoạt động và vị trí của chúng
+   - Tạo `new_session_mask` để báo hiệu ranh giới phiên
+   - **Đây là nơi cần kích hoạt việc đặt lại trạng thái ẩn**
+
+2. **`batching_models.py`** - `SessionGRUModel`
+   - Một **triển khai GRU độc lập** tách biệt từ GRU4Rec
+   - Sử dụng `GRUCell` thay vì mô hình đầy đủ
+   - **Có thể không khớp với kiến trúc GRU4Rec**
+
+3. **`batching_demo.py`** - Tập lệnh kiểm thử
+   - Chỉ kiểm thử với dữ liệu đồ chơi và phiên giả
+   - Sử dụng `SessionGRUModel`, không phải GRU4Rec thực tế
+   - **Không bao giờ được kiểm thử với GRU4Rec thực tế**
+
+4. **`batching_utils.py`** - Trình tải
+   - Cố gắng tải từ cột 'item_idx' (không tồn tại trong dữ liệu thực tế)
+   - **Không tương thích với định dạng dữ liệu thực tế**
+
+**Vấn đề thực tế:**
+
+Cơ sở hạ tầng batching được **xây dựng riêng** và **không bao giờ được tích hợp với GRU4Rec thực tế**. Đó là một triển khai song song mà:
+- Sử dụng `SessionGRUModel` của riêng nó thay vì `GRU4Rec`
+- Mong đợi các định dạng dữ liệu khác nhau
+- Có quản lý trạng thái ẩn của riêng nó
+- Chỉ được kiểm thử trên dữ liệu đồ chơi
+
+**Tại sao nó thất bại trong huấn luyện thực tế:**
+- Mô hình `GRU4Rec` từ `gru4rec_pytorch.py` không tương thích với lớp batching này
+- `BATCHING_IMPLEMENTATION_TEMPLATE.py` cố gắng buộc chúng cùng nhau, điều này phá vỡ mọi thứ
+
+Đây là **mismatch kiến trúc cơ bản**, không chỉ các lỗi cần sửa. Batching thích hợp sẽ yêu cầu viết lại quá trình huấn luyện `GRU4Rec` để sử dụng tập dữ liệu batching một cách nhất quán.
+
+Bạn muốn tôi ghi lại khoảng cách kiến trúc này và lưu trữ mã batching dưới dạng "nguyên mẫu nghiên cứu"?
+
+Phát hiện: Triển khai batching song song phiên không tương thích về mặt kiến trúc với mô hình GRU4Rec sản xuất.
+
+Phân tích Nguyên nhân Gốc:
+- Cơ sở hạ tầng batching tồn tại trong 4 tệp riêng biệt:
+  * batching_datasets.py - SessionParallelDataset (tạo new_session_mask)
+  * batching_models.py - SessionGRUModel (triển khai GRU riêng, KHÔNG phải GRU4Rec)
+  * batching_demo.py - Chỉ kiểm thử với dữ liệu tổng hợp, không bao giờ kiểm thử với GRU4Rec thực tế
+  * batching_utils.py - Trình tải dữ liệu mong đợi cột 'item_idx' (dữ liệu thực tế có 'item_id')
+
+- Các tệp này tạo thành một DỰ ÁN SONG SONG chưa bao giờ được tích hợp đúng cách:
+  * Dự án A: gru4rec_pytorch.py + run.py + evaluation.py = HOẠT ĐỘNG (Recall@20=0.628)
+  * Dự án B: thư mục batching/ = BỎ RƠI (SessionGRUModel tách biệt từ GRU4Rec)
+  * Cầu nối thất bại: BATCHING_IMPLEMENTATION_TEMPLATE.py cố kết nối B→A = THẤT BẠI THẢM HỌC
+
+Bằng chứng Thất bại Hiệu suất:
+- Huấn luyện tiêu chuẩn: Recall@20=0.628, Loss=0.33, Time/epoch=226s
+- Huấn luyện batching: Recall@20=0.016 (tệ hơn 97.5%), Loss=25.31 (cao hơn 76 lần), Time/epoch=1517s (chậm hơn 6.7 lần)
+- Vấn đề gốc: SessionGRUModel chưa bao giờ được tích hợp với kiến trúc GRU4Rec thực tế
+- Không tương thích quản lý trạng thái ẩn: lớp batching đặt lại trạng thái ẩn ở ranh giới phiên,
+  nhưng GRU4Rec mong đợi huấn luyện liên tục với bảo toàn ngữ cảnh phiên thích hợp
+
+Quyết định: Lưu trữ mã batching dưới dạng nguyên mẫu nghiên cứu (không xóa, nhưng đánh dấu là không hoạt động)
+- Lý do: Cần viết lại kiến trúc đáng kể để batching hoạt động với GRU4Rec
+- ROI: Tiềm năng tăng tốc biên so với nỗ lực cần thiết để tích hợp đầy đủ
+- Phương án thay thế: Huấn luyện tiêu chuẩn với phương pháp đa-seed được chứng minh, có thể tái tạo được và không cần gỡ lỗi
+
+Các Hành động Đã Thực hiện:
+1. run_training_batching.py - Đã thêm cảnh báo không dùng nữa + lời nhắc chặn + so sánh hiệu suất
+2. evaluation.py - Cố định hỗ trợ mô hình được tải (itemidmap, kiểm tra hasattr, nhập pandas)
+3. Nhật ký này - Ghi lại khoảng cách kiến trúc để tham khảo trong tương lai
+
+Khuyến cáo: Tiếp tục với quy trình huấn luyện tiêu chuẩn (run.py, run_multiseed.py).
+Nếu cần tối ưu hóa batching trong tương lai:
+- Tùy chọn 1: Viết lại hoàn toàn để sử dụng SessionGRUModel một cách nhất quán (không buộc vừa vào GRU4Rec)
+- Tùy chọn 2: Triển khai lớp tích hợp thích hợp tôn trọng giả định session-liên tục của GRU4Rec
+- Tùy chọn 3: Đánh giá các mô hình mới hơn (BERT4Rec, SASRec) có thể có hỗ trợ batching tốt hơn
+
+Vị trí Lưu trữ: /batching/ (đánh dấu là nguyên mẫu nghiên cứu, không sẵn sàng sản xuất)

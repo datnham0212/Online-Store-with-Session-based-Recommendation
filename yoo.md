@@ -138,6 +138,61 @@ Aggregate diversity: 0.754868
 Inter-user diversity: 0.884430
 
 
+(torch_env) PS C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation> python web_demo\model\gru4rec_torch\benchmark.py yoochoose --model-path web_demo\model\gru4rec_torch\output_data\yoochoose_xe_winning_final.pt --test-samples 5000 --full-eval
+Using preprocessed yoochoose-data dataset
+[1/4] Loading data...
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\yoochoose-data\yoochoose_train_full.dat
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\yoochoose-data\yoochoose_test.dat
+  Train: 27023131 events, 7802752 sessions
+  Test:  658146 events, 179462 sessions
+  Sampled test to 5000 sessions (18279 events)
+[2/4] Loading GRU4Rec model...
+  Loaded: web_demo\model\gru4rec_torch\output_data\yoochoose_xe_winning_final.pt
+  Model vocabulary size: 37800
+  Model layers: [480]
+  Extracted embeddings shape: (37800, 480)
+[3/4] Training baselines...
+  MostPopular: 37800 items
+  LastItem: ready (fallback to MostPopular if needed)
+[4/4] Evaluating models...
+  (Full evaluation with inter-user diversity)
+  GRU4Rec...Original test data: 18279 events
+Filtered test data: 16921 events (removed 1358 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 4324
+Items in both: 4220
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Building MinHash signatures: 100%|█████████████████████████████████| 10000/10000 [00:18<00:00, 540.25it/s]
+Querying LSH for candidate pairs: 100%|█████████████████████████████| 10000/10000 [01:51<00:00, 89.55it/s]
+ done
+  MostPopular... done
+  LastItem... done
+
+================================================================================
+BASELINE COMPARISON REPORT
+================================================================================
+
+RECALL and MRR Metrics:
+--------------------------------------------------------------------------------
+Model               Recall@20   MRR@20
+--------------------------------------------------------------------------------
+GRU4Rec             0.6505      0.3045
+MostPopular         0.0064      0.0021
+LastItem            0.3088      0.0951
+--------------------------------------------------------------------------------
+
+DIVERSITY Metrics (GRU4Rec):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3675
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6064
+Aggregate Diversity:  0.3675
+Inter-User Diversity: 0.8856
+
+================================================================================
+
+
 LẦN 1 (RETAIL ROCKET):
 Đang tạo mô hình GRU4Rec trên thiết bị "cpu"
 ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
@@ -257,3 +312,220 @@ ILD: 0.610797
 Aggregate diversity: 0.549198
 Inter-user diversity: 0.900107
 
+
+(torch_env) PS C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation> python web_demo\model\gru4rec_torch\benchmark.py retailrocket --model-path web_demo\model\gru4rec_torch\output_data\retailrocket_bprmax_winning_final.pt --test-samples 5000 --full-eval
+;CUsing preprocessed retailrocket-data dataset
+[1/4] Loading data...
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\retailrocket-data\retailrocket_train_full.dat
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\retailrocket-data\retailrocket_test.dat
+  Train: 1126705 events, 346186 sessions
+  Test:  44910 events, 18026 sessions
+  Sampled test to 5000 sessions (12382 events)
+[2/4] Loading GRU4Rec model...
+  Loaded: web_demo\model\gru4rec_torch\output_data\retailrocket_bprmax_winning_final.pt
+  Model vocabulary size: 85827
+  Model layers: [224]
+  Extracted embeddings shape: (85827, 224)
+[3/4] Training baselines...
+  MostPopular: 85827 items
+  LastItem: ready (fallback to MostPopular if needed)
+[4/4] Evaluating models...
+  (Full evaluation with inter-user diversity)
+  GRU4Rec...Original test data: 12382 events
+Filtered test data: 12167 events (removed 215 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 8018
+Items in both: 7843
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.02 giây
+Building MinHash signatures: 100%|███████████████████████████████████| 7255/7255 [00:12<00:00, 596.58it/s]
+Querying LSH for candidate pairs: 100%|██████████████████████████████| 7255/7255 [00:09<00:00, 802.54it/s]
+ done
+  MostPopular... done
+  LastItem... done
+
+================================================================================
+BASELINE COMPARISON REPORT
+================================================================================
+
+RECALL and MRR Metrics:
+--------------------------------------------------------------------------------
+Model               Recall@20   MRR@20
+--------------------------------------------------------------------------------
+GRU4Rec             0.4524      0.1898
+MostPopular         0.0054      0.0009
+LastItem            0.1416      0.0345
+--------------------------------------------------------------------------------
+
+DIVERSITY Metrics (GRU4Rec):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3540
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6129
+Aggregate Diversity:  0.3540
+Inter-User Diversity: 0.8953
+
+================================================================================
+
+
+
+==================================================================================
+Cần có bổ sung thêm baseline KNN:
+
+RETAIL ROCKET:
+(torch_env) PS C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation> python web_demo\model\gru4rec_torch\benchmark.py retailrocket --model-path web_demo\model\gru4rec_torch\output_data\retailrocket_bprmax_winning_final.pt --test-samples 5000 --full-eval
+;CUsing preprocessed retailrocket-data dataset
+[1/4] Loading data...
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\retailrocket-data\retailrocket_train_full.dat
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\retailrocket-data\retailrocket_test.dat
+  Train: 1126705 events, 346186 sessions
+  Test:  44910 events, 18026 sessions
+  Sampled test to 5000 sessions (12788 events)
+[2/4] Loading GRU4Rec model...
+  Loaded: web_demo\model\gru4rec_torch\output_data\retailrocket_bprmax_winning_final.pt
+  Model vocabulary size: 85827
+  Model layers: [224]
+  Extracted embeddings shape: (85827, 224)
+[3/4] Training baselines...
+  MostPopular: 85827 items
+  LastItem: ready (fallback to MostPopular if needed)
+  [ItemKNN] Computing item-item similarity... done (12.56s)
+  ItemKNN: 85827 items
+[4/4] Evaluating models...
+  (Full evaluation with inter-user diversity)
+  GRU4Rec...Original test data: 12788 events
+Filtered test data: 12579 events (removed 209 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 7949
+Items in both: 7798
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.02 giây
+Building MinHash signatures: 100%|███████████████████████████████████| 7655/7655 [00:12<00:00, 630.92it/s]
+Querying LSH for candidate pairs: 100%|██████████████████████████████| 7655/7655 [00:08<00:00, 942.85it/s]
+ done
+  MostPopular... done
+  LastItem... done
+  ItemKNN... done
+
+================================================================================
+BASELINE COMPARISON REPORT
+================================================================================
+
+RECALL and MRR Metrics:
+--------------------------------------------------------------------------------
+Model               Recall@20   MRR@20
+--------------------------------------------------------------------------------
+GRU4Rec             0.4385      0.1866
+MostPopular         0.0042      0.0008
+LastItem            0.1448      0.0378
+ItemKNN             0.1134      0.0490
+--------------------------------------------------------------------------------
+
+COVERAGE & DIVERSITY Metrics (GRU4Rec only):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3447
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6191
+Aggregate Diversity:  0.3447
+Inter-User Diversity: 0.9105
+
+================================================================================
+
+
+YOOCHOOSE:
+(torch_env) PS C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation> python web_demo\model\gru4rec_torch\benchmark.py yoochoose --model-path web_demo\model\gru4rec_torch\output_data\yoochoose_xe_winning_final.pt --test-samples 5000 --full-eval
+Using preprocessed yoochoose-data dataset
+[1/4] Loading data...
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\yoochoose-data\yoochoose_train_full.dat
+Loading data: C:\Users\Admin\Documents\Research\Online Store with Session-based Recommendation\web_demo\model\gru4rec_torch\input_data\yoochoose-data\yoochoose_test.dat
+  Train: 27023131 events, 7802752 sessions
+  Test:  658146 events, 179462 sessions
+  Sampled test to 5000 sessions (18442 events)
+[2/4] Loading GRU4Rec model...
+  Loaded: web_demo\model\gru4rec_torch\output_data\yoochoose_xe_winning_final.pt
+  Model vocabulary size: 37800
+  Model layers: [480]
+  Extracted embeddings shape: (37800, 480)
+[3/4] Training baselines...
+  MostPopular: 37800 items
+  LastItem: ready (fallback to MostPopular if needed)
+  [ItemKNN] Computing item-item similarity... done (318.42s)
+  ItemKNN: 37800 items
+[4/4] Evaluating models...
+  (Full evaluation with inter-user diversity)
+  GRU4Rec...Original test data: 18442 events
+Filtered test data: 16884 events (removed 1558 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 4542
+Items in both: 4424
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Building MinHash signatures: 100%|█████████████████████████████████| 10000/10000 [00:19<00:00, 500.70it/s]
+Querying LSH for candidate pairs: 100%|████████████████████████████| 10000/10000 [01:36<00:00, 103.67it/s]
+ done
+  MostPopular... done
+  LastItem... done
+  ItemKNN... done
+
+================================================================================
+BASELINE COMPARISON REPORT
+================================================================================
+
+RECALL and MRR Metrics:
+--------------------------------------------------------------------------------
+Model               Recall@20   MRR@20
+--------------------------------------------------------------------------------
+GRU4Rec             0.6353      0.2915
+MostPopular         0.0070      0.0025
+LastItem            0.2980      0.0891
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+MostPopular         0.0070      0.0025
+LastItem            0.2980      0.0891
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+
+COVERAGE & DIVERSITY Metrics (GRU4Rec only):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3834
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6079
+Aggregate Diversity:  0.3834
+Inter-User Diversity: 0.8890
+
+================================================================================
+MostPopular         0.0070      0.0025
+LastItem            0.2980      0.0891
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+
+COVERAGE & DIVERSITY Metrics (GRU4Rec only):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3834
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6079
+MostPopular         0.0070      0.0025
+LastItem            0.2980      0.0891
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+
+COVERAGE & DIVERSITY Metrics (GRU4Rec only):
+--------------------------------------------------------------------------------
+LastItem            0.2980      0.0891
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+ItemKNN             0.3618      0.1443
+--------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
+
+COVERAGE & DIVERSITY Metrics (GRU4Rec only):
+--------------------------------------------------------------------------------
+Item Coverage:        0.3834
+Catalog Coverage:     1.0000
+Intra-List Diversity: 0.6079
+Aggregate Diversity:  0.3834
+Inter-User Diversity: 0.8890
+
+================================================================================

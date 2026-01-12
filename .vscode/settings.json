@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./web_demo/model/gru4rec_torch/batching"
+    ]
+}
