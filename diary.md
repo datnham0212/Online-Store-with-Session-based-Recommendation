@@ -559,9 +559,6 @@ Results saved to: output_data/retailrocket_bprmax_winning_final.pt
 
 
 # Jan 5th 2026
-- GRU4Rec là mô hình từ năm 2016 (gần 10 năm trước), đã có nhiều cải tiến vượt trội như BERT4Rec, SASRec, SR-GNN.
-- Nên thêm phần so sánh GRU4Rec với ít nhất 1-2 mô hình hiện đại hơn (Transformer-based)
-Hoặc đề xuất cải tiến nhỏ cho GRU4Rec (ví dụ: attention mechanism, multi-behavior modeling)
 <!-- - Cần thêm baseline như Item-KNN, FPMC, hoặc ít nhất là LSTM (Có KNN rồi) -->
 <!-- - Cần làm rõ: mỗi phiên test có bao nhiêu bước dự đoán? Dùng toàn bộ phiên hay chỉ item cuối? -->
 <!-- - Kết quả thực nghiệm chưa có độ lệch chuẩn (standard deviation). Không rõ các thí nghiệm được chạy bao nhiêu lần (random seeds) -->
@@ -569,6 +566,9 @@ Hoặc đề xuất cải tiến nhỏ cho GRU4Rec (ví dụ: attention mechanis
   + RQ1: GRU4Rec đạt hiệu suất như thế nào trên bài toán SBRS?
   + RQ2: Ảnh hưởng của loss functions (CE vs BPR) như thế nào?
   + RQ3: Các yếu tố nào ảnh hưởng đến hiệu suất (layer size, batch, epochs)? -->
+- GRU4Rec là mô hình từ năm 2016 (gần 10 năm trước), đã có nhiều cải tiến vượt trội như BERT4Rec, SASRec, SR-GNN.
+- Nên thêm phần so sánh GRU4Rec với ít nhất 1-2 mô hình hiện đại hơn (Transformer-based)
+Hoặc đề xuất cải tiến nhỏ cho GRU4Rec (ví dụ: attention mechanism, multi-behavior modeling)
 
 - Vài ý để làm cho ngon hơn:
 Về việc cải tiến mô hình
@@ -666,3 +666,375 @@ Nếu cần tối ưu hóa batching trong tương lai:
 - Tùy chọn 3: Đánh giá các mô hình mới hơn (BERT4Rec, SASRec) có thể có hỗ trợ batching tốt hơn
 
 Vị trí Lưu trữ: /batching/ (đánh dấu là nguyên mẫu nghiên cứu, không sẵn sàng sản xuất)
+
+
+
+
+# Jan 13th 2026
+TOP1
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 42
+ĐẶT   loss                    THÀNH   top1   (kiểu: <class 'str'>)
+ĐẶT   layers                  THÀNH   [224]  (kiểu: <class 'list'>)
+ĐẶT   batch_size              THÀNH   64     (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.2    (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.1    (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.01   (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0    (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   128    (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.25   (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0    (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0    (kiểu: <class 'float'>)
+ĐẶT   constrained_embedding   THÀNH   True   (kiểu: <class 'bool'>)
+ĐẶT   n_epochs                THÀNH   10     (kiểu: <class 'int'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 2.58 giây
+Đã tạo bộ lưu trữ mẫu với 78125 lô mẫu
+Epoch1 --> mất mát: 0.011705 	(49.11s) 	[251.33 mb/s | 16085 e/s]
+Epoch2 --> mất mát: 0.011677 	(48.30s) 	[255.50 mb/s | 16352 e/s]
+Epoch3 --> mất mát: 0.011616 	(48.88s) 	[252.52 mb/s | 16161 e/s]
+Epoch4 --> mất mát: 0.010966 	(48.19s) 	[256.11 mb/s | 16391 e/s]
+Epoch5 --> mất mát: 0.009653 	(47.83s) 	[258.03 mb/s | 16514 e/s]
+Epoch6 --> mất mát: 0.008581 	(48.02s) 	[257.02 mb/s | 16450 e/s]
+Epoch7 --> mất mát: 0.007860 	(48.54s) 	[254.27 mb/s | 16273 e/s]
+Epoch8 --> mất mát: 0.007368 	(47.44s) 	[260.13 mb/s | 16649 e/s]
+Epoch9 --> mất mát: 0.007017 	(48.26s) 	[255.74 mb/s | 16367 e/s]
+Epoch10 --> mất mát: 0.006756 	(48.31s) 	[255.45 mb/s | 16349 e/s]
+Thời gian huấn luyện tổng cộng: 511.68s
+Đang lưu mô hình đã huấn luyện vào: output_data/retailrocket_top1_tuned.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 44910 events
+Filtered test data: 44129 events (removed 781 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 19777
+Items in both: 19289
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.06 giây
+Đánh giá mất 7.01s
+Recall@1: 0.002310 MRR@1: 0.002310
+Recall@5: 0.002727 MRR@5: 0.002452
+Recall@10: 0.002878 MRR@10: 0.002475
+Recall@20: 0.003333 MRR@20: 0.002507
+Item coverage: 0.000245
+Catalog coverage: 1.000000
+ILD: 0.185550
+
+TOP1-max
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 42
+ĐẶT   loss                    THÀNH   top1-max   (kiểu: <class 'str'>)
+ĐẶT   layers                  THÀNH   [224]      (kiểu: <class 'list'>)
+ĐẶT   batch_size              THÀNH   64         (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.2        (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.1        (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.02       (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0        (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   128        (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.25       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0        (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0        (kiểu: <class 'float'>)
+ĐẶT   constrained_embedding   THÀNH   True       (kiểu: <class 'bool'>)
+ĐẶT   n_epochs                THÀNH   10         (kiểu: <class 'int'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 2.66 giây
+Đã tạo bộ lưu trữ mẫu với 78125 lô mẫu
+Epoch1 --> mất mát: 0.011692 	(50.82s) 	[242.86 mb/s | 15543 e/s]
+Epoch2 --> mất mát: 0.011471 	(49.76s) 	[248.05 mb/s | 15875 e/s]
+Epoch3 --> mất mát: 0.009799 	(49.96s) 	[247.03 mb/s | 15810 e/s]
+Epoch4 --> mất mát: 0.008445 	(50.58s) 	[243.99 mb/s | 15615 e/s]
+Epoch5 --> mất mát: 0.007950 	(50.28s) 	[245.46 mb/s | 15709 e/s]
+Epoch6 --> mất mát: 0.007740 	(49.82s) 	[247.75 mb/s | 15856 e/s]
+Epoch7 --> mất mát: 0.007635 	(48.90s) 	[252.40 mb/s | 16154 e/s]
+Epoch8 --> mất mát: 0.007568 	(49.20s) 	[250.88 mb/s | 16056 e/s]
+Epoch9 --> mất mát: 0.007518 	(49.52s) 	[249.25 mb/s | 15952 e/s]
+Epoch10 --> mất mát: 0.007478 	(49.84s) 	[247.61 mb/s | 15847 e/s]
+Thời gian huấn luyện tổng cộng: 522.95s
+Đang lưu mô hình đã huấn luyện vào: output_data/retailrocket_top1max_tuned.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/retailrocket-data/retailrocket_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 44910 events
+Filtered test data: 44129 events (removed 781 unknown items)
+Training vocabulary size: 85827
+Test data unique items: 19777
+Items in both: 19289
+Using existing item ID map
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 0.05 giây
+Đánh giá mất 6.53s
+Recall@1: 0.001401 MRR@1: 0.001401
+Recall@5: 0.002386 MRR@5: 0.001748
+Recall@10: 0.003067 MRR@10: 0.001838
+Recall@20: 0.004507 MRR@20: 0.001935
+Item coverage: 0.000338
+Catalog coverage: 1.000000
+ILD: 0.837200
+
+TOP1 
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 42
+ĐẶT   loss                    THÀNH   top1   (kiểu: <class 'str'>)
+ĐẶT   layers                  THÀNH   [128]  (kiểu: <class 'list'>)
+ĐẶT   batch_size              THÀNH   64     (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.2    (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.1    (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.01   (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0    (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   128    (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.25   (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0    (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0    (kiểu: <class 'float'>)
+ĐẶT   constrained_embedding   THÀNH   True   (kiểu: <class 'bool'>)
+ĐẶT   n_epochs                THÀNH   8      (kiểu: <class 'int'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 57.83 giây
+Đã tạo bộ lưu trữ mẫu với 78125 lô mẫu
+Epoch1 --> mất mát: 0.005044 	(1133.78s) 	[264.95 mb/s | 16957 e/s]
+Epoch2 --> mất mát: 0.003159 	(1125.67s) 	[266.85 mb/s | 17079 e/s]
+Epoch3 --> mất mát: 0.002781 	(1116.48s) 	[269.05 mb/s | 17219 e/s]
+Epoch4 --> mất mát: 0.002581 	(1098.66s) 	[273.42 mb/s | 17499 e/s]
+Epoch5 --> mất mát: 0.002445 	(1079.18s) 	[278.35 mb/s | 17814 e/s]
+Epoch6 --> mất mát: 0.002344 	(1081.50s) 	[277.75 mb/s | 17776 e/s]
+Epoch7 --> mất mát: 0.002257 	(1061.92s) 	[282.88 mb/s | 18104 e/s]
+Epoch8 --> mất mát: 0.002176 	(1072.09s) 	[280.19 mb/s | 17932 e/s]
+Thời gian huấn luyện tổng cộng: 9249.32s
+Đang lưu mô hình đã huấn luyện vào: output_data/yoochoose_top1_tuned.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 658146 events
+Filtered test data: 608200 events (removed 49946 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 19015
+Items in both: 18854
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Đánh giá mất 31.65s
+Recall@1: 0.025914 MRR@1: 0.025914
+Recall@5: 0.113779 MRR@5: 0.055286
+Recall@10: 0.189076 MRR@10: 0.065076
+Recall@20: 0.280485 MRR@20: 0.071397
+Item coverage: 0.019894
+Catalog coverage: 1.000000
+ILD: 0.103151
+
+
+TOP1-max
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 42
+ĐẶT   loss                    THÀNH   top1-max   (kiểu: <class 'str'>)
+ĐẶT   layers                  THÀNH   [128]      (kiểu: <class 'list'>)
+ĐẶT   batch_size              THÀNH   64         (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.2        (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.1        (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.02       (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0        (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   128        (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.25       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0        (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0        (kiểu: <class 'float'>)
+ĐẶT   constrained_embedding   THÀNH   True       (kiểu: <class 'bool'>)
+ĐẶT   n_epochs                THÀNH   8          (kiểu: <class 'int'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 50.14 giây
+Đã tạo bộ lưu trữ mẫu với 78125 lô mẫu
+Epoch1 --> mất mát: 0.005880 	(1129.01s) 	[266.07 mb/s | 17028 e/s]
+Epoch2 --> mất mát: 0.004662 	(1134.30s) 	[264.83 mb/s | 16949 e/s]
+Epoch3 --> mất mát: 0.004401 	(1135.48s) 	[264.55 mb/s | 16931 e/s]
+Epoch4 --> mất mát: 0.004280 	(1139.64s) 	[263.58 mb/s | 16869 e/s]
+Epoch5 --> mất mát: 0.004207 	(1129.78s) 	[265.88 mb/s | 17017 e/s]
+Epoch6 --> mất mát: 0.004156 	(1124.01s) 	[267.25 mb/s | 17104 e/s]
+Epoch7 --> mất mát: 0.004117 	(1119.19s) 	[268.40 mb/s | 17178 e/s]
+Epoch8 --> mất mát: 0.004085 	(1145.84s) 	[262.16 mb/s | 16778 e/s]
+Thời gian huấn luyện tổng cộng: 9519.59s
+Đang lưu mô hình đã huấn luyện vào: output_data/yoochoose_top1max_tuned.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 658146 events
+Filtered test data: 608200 events (removed 49946 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 19015
+Items in both: 18854
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Đánh giá mất 407.06s
+Recall@1: 0.070508 MRR@1: 0.070508
+Recall@5: 0.274251 MRR@5: 0.139756
+Recall@10: 0.412273 MRR@10: 0.158103
+Recall@20: 0.526295 MRR@20: 0.166100
+Item coverage: 0.215106
+Catalog coverage: 1.000000
+ILD: 0.150309
+
+
+# Jan 21st 2026
+Yoochoose BPR-max
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 42
+ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
+ĐẶT   constrained_embedding   THÀNH   True      (kiểu: <class 'bool'>)
+ĐẶT   embedding               THÀNH   0         (kiểu: <class 'int'>)
+ĐẶT   elu_param               THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   layers                  THÀNH   [480]     (kiểu: <class 'list'>)
+ĐẶT   n_epochs                THÀNH   4         (kiểu: <class 'int'>)
+ĐẶT   batch_size              THÀNH   48        (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.07      (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   2048      (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0       (kiểu: <class 'float'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 45.84 giây
+Đã tạo bộ lưu trữ mẫu với 4882 lô mẫu
+Epoch1 --> mất mát: 0.153417 	(1658.63s) 	[241.46 mb/s | 11590 e/s]
+Epoch2 --> mất mát: 0.141268 	(1654.15s) 	[242.11 mb/s | 11621 e/s]
+Epoch3 --> mất mát: 0.137226 	(1645.26s) 	[243.42 mb/s | 11684 e/s]
+Epoch4 --> mất mát: 0.134834 	(1639.38s) 	[244.30 mb/s | 11726 e/s]
+Thời gian huấn luyện tổng cộng: 7030.44s
+Đang lưu mô hình đã huấn luyện vào: /kaggle/working/yoochoose_bprmax_seed42.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 658146 events
+Filtered test data: 608200 events (removed 49946 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 19015
+Items in both: 18854
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Building MinHash signatures: 100%|███████| 10000/10000 [00:11<00:00, 839.22it/s]
+Querying LSH for candidate pairs: 100%|██| 10000/10000 [00:29<00:00, 342.21it/s]
+Đánh giá mất 82.66s
+Recall@1: 0.171715 MRR@1: 0.171715
+Recall@5: 0.428099 MRR@5: 0.263578
+Recall@10: 0.548207 MRR@10: 0.279796
+Recall@20: 0.645732 MRR@20: 0.286627
+Item coverage: 0.751958
+Catalog coverage: 1.000000
+ILD: 0.637514
+Aggregate diversity: 0.751958
+Inter-user diversity: 0.850537
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 123
+ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
+ĐẶT   constrained_embedding   THÀNH   True      (kiểu: <class 'bool'>)
+ĐẶT   embedding               THÀNH   0         (kiểu: <class 'int'>)
+ĐẶT   elu_param               THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   layers                  THÀNH   [480]     (kiểu: <class 'list'>)
+ĐẶT   n_epochs                THÀNH   4         (kiểu: <class 'int'>)
+ĐẶT   batch_size              THÀNH   48        (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.07      (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   2048      (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0       (kiểu: <class 'float'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 47.18 giây
+Đã tạo bộ lưu trữ mẫu với 4882 lô mẫu
+Epoch1 --> mất mát: 0.153377 	(1655.51s) 	[241.91 mb/s | 11612 e/s]
+Epoch2 --> mất mát: 0.141239 	(1651.41s) 	[242.51 mb/s | 11641 e/s]
+Epoch3 --> mất mát: 0.137212 	(1638.39s) 	[244.44 mb/s | 11733 e/s]
+Epoch4 --> mất mát: 0.134835 	(1633.85s) 	[245.12 mb/s | 11766 e/s]
+Thời gian huấn luyện tổng cộng: 7005.39s
+Đang lưu mô hình đã huấn luyện vào: /kaggle/working/yoochoose_bprmax_seed123.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 658146 events
+Filtered test data: 608200 events (removed 49946 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 19015
+Items in both: 18854
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Building MinHash signatures: 100%|███████| 10000/10000 [00:11<00:00, 857.44it/s]
+Querying LSH for candidate pairs: 100%|██| 10000/10000 [00:29<00:00, 342.05it/s]
+Đánh giá mất 81.89s
+Recall@1: 0.171972 MRR@1: 0.171972
+Recall@5: 0.428878 MRR@5: 0.263756
+Recall@10: 0.548868 MRR@10: 0.279991
+Recall@20: 0.645903 MRR@20: 0.286791
+Item coverage: 0.750794
+Catalog coverage: 1.000000
+ILD: 0.639350
+Aggregate diversity: 0.750794
+Inter-user diversity: 0.851577
+Đang tạo mô hình GRU4Rec trên thiết bị "cuda:0"
+Random seed set to: 456
+ĐẶT   loss                    THÀNH   bpr-max   (kiểu: <class 'str'>)
+ĐẶT   constrained_embedding   THÀNH   True      (kiểu: <class 'bool'>)
+ĐẶT   embedding               THÀNH   0         (kiểu: <class 'int'>)
+ĐẶT   elu_param               THÀNH   0.5       (kiểu: <class 'float'>)
+ĐẶT   layers                  THÀNH   [480]     (kiểu: <class 'list'>)
+ĐẶT   n_epochs                THÀNH   4         (kiểu: <class 'int'>)
+ĐẶT   batch_size              THÀNH   48        (kiểu: <class 'int'>)
+ĐẶT   dropout_p_embed         THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   dropout_p_hidden        THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   learning_rate           THÀNH   0.07      (kiểu: <class 'float'>)
+ĐẶT   momentum                THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   n_sample                THÀNH   2048      (kiểu: <class 'int'>)
+ĐẶT   sample_alpha            THÀNH   0.2       (kiểu: <class 'float'>)
+ĐẶT   bpreg                   THÀNH   0.0       (kiểu: <class 'float'>)
+ĐẶT   logq                    THÀNH   1.0       (kiểu: <class 'float'>)
+Đang tải dữ liệu huấn luyện...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_train_full.dat
+Bắt đầu huấn luyện
+Dữ liệu chưa được sắp xếp theo session_id, đang sắp xếp...
+Dữ liệu đã được sắp xếp trong 47.24 giây
+Đã tạo bộ lưu trữ mẫu với 4882 lô mẫu
+Epoch1 --> mất mát: 0.153400 	(1676.18s) 	[238.93 mb/s | 11469 e/s]
+Epoch2 --> mất mát: 0.141250 	(1647.13s) 	[243.15 mb/s | 11671 e/s]
+Epoch3 --> mất mát: 0.137220 	(1647.79s) 	[243.05 mb/s | 11666 e/s]
+Epoch4 --> mất mát: 0.134842 	(1644.97s) 	[243.46 mb/s | 11686 e/s]
+Thời gian huấn luyện tổng cộng: 7041.09s
+Đang lưu mô hình đã huấn luyện vào: /kaggle/working/yoochoose_bprmax_seed456.pt
+Đang tải dữ liệu kiểm tra...
+Đang tải dữ liệu từ tệp phân cách bằng TAB: input_data/yoochoose-data/yoochoose_test.dat
+Bắt đầu đánh giá (cut-off=[1, 5, 10, 20], sử dụng chế độ standard để xử lý hòa)
+Original test data: 658146 events
+Filtered test data: 608200 events (removed 49946 unknown items)
+Training vocabulary size: 37800
+Test data unique items: 19015
+Items in both: 18854
+Using existing item ID map
+Dữ liệu đã được sắp xếp theo session_id, timestamp
+Building MinHash signatures: 100%|███████| 10000/10000 [00:11<00:00, 849.70it/s]
+Querying LSH for candidate pairs: 100%|██| 10000/10000 [00:29<00:00, 339.82it/s]
+Đánh giá mất 82.82s
+Recall@1: 0.172078 MRR@1: 0.172078
+Recall@5: 0.427618 MRR@5: 0.263343
+Recall@10: 0.548974 MRR@10: 0.279726
+Recall@20: 0.645938 MRR@20: 0.286517
+Item coverage: 0.749550
+Catalog coverage: 1.000000
+ILD: 0.638736
+Aggregate diversity: 0.749550
+Inter-user diversity: 0.852243

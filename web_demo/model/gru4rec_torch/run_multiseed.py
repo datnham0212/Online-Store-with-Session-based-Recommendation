@@ -30,7 +30,7 @@ def load_params_from_file(param_file):
         param_list.append(f"{k}={v}")
     return ','.join(param_list)
 
-def run_with_seed(seed, dataset, config_params, output_prefix, output_dir, device='cpu'):
+def run_with_seed(seed, dataset, config_params, output_prefix, output_dir, device='cpu', attention=False):
     """Run training with a specific random seed"""
     print(f"\n{'='*80}")
     print(f"RUN {seed}: Training with seed={seed} on device={device}")
@@ -49,6 +49,8 @@ def run_with_seed(seed, dataset, config_params, output_prefix, output_dir, devic
         '-s', f'{output_dir}/{output_prefix}_seed{seed}.pt',
         '--seed', str(seed)
     ]
+    if attention:
+        cmd.append('--attention')
     
     result = subprocess.run(cmd, cwd=os.getcwd())
     return result.returncode == 0
@@ -59,6 +61,7 @@ def main():
     dataset = sys.argv[1] if len(sys.argv) > 1 else 'retailrocket-data'
     num_runs = int(sys.argv[2]) if len(sys.argv) > 2 else 3
     device = sys.argv[3] if len(sys.argv) > 3 else 'cuda'
+    attention = '--attention' in sys.argv
     
     # Detect if running on Kaggle and set output directory
     if os.path.exists('/kaggle/working/'):
@@ -109,8 +112,8 @@ Configuration Parameters:
     successful_runs = 0
     
     for seed in seeds:
-        output_prefix = f'best_{dataset_short}'
-        success = run_with_seed(seed, dataset, config_params, output_prefix, output_dir, device=device)
+        output_prefix = f'best_{dataset_short}' + ('_attn' if attention else '')
+        success = run_with_seed(seed, dataset, config_params, output_prefix, output_dir, device=device, attention=attention)
         results[seed] = success
         if success:
             successful_runs += 1

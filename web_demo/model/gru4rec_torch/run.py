@@ -30,6 +30,7 @@ parser.add_argument('-lpm', '--log_primary_metric', action='store_true', help='G
 parser.add_argument('--eval-metrics', type=str, default='recall_mrr,coverage,ild,aggregate_diversity,inter_user_diversity',
                     help='Các chỉ số đánh giá cần tính, phân tách bằng dấu phẩy (ví dụ: recall_mrr,coverage,ild)')
 parser.add_argument('--seed', metavar='SEED', type=int, default=42, help='Random seed cho reproducibility (default: 42)')
+parser.add_argument('--attention', action='store_true', help='Bật attention layer sau GRU (Attention-Enhanced GRU4Rec)')
 args = parser.parse_args()
 
 # Thay đổi thư mục làm việc thành vị trí của script
@@ -103,6 +104,8 @@ if (args.parameter_string is not None) + (args.parameter_file is not None) + (ar
 if args.load_model:
     print('Đang tải mô hình đã huấn luyện từ tệp: {} (vào thiết bị "{}")'.format(args.path, args.device))
     gru = GRU4Rec.loadmodel(args.path, device=args.device)
+    if hasattr(gru, 'use_attention'):
+        gru.use_attention = args.attention
 else:
     # Tải tham số từ tệp hoặc chuỗi
     if args.parameter_file:
@@ -119,7 +122,13 @@ else:
     # Set random seed for reproducibility
     set_seed(args.seed)
     print('Random seed set to: {}'.format(args.seed))
-    gru = GRU4Rec(device=args.device)
+    # Pass use_attention if supported
+    try:
+        gru = GRU4Rec(device=args.device, use_attention=args.attention)
+    except TypeError:
+        gru = GRU4Rec(device=args.device)
+        if hasattr(gru, 'use_attention'):
+            gru.use_attention = args.attention
     gru.set_params(**gru4rec_params)
     print('Đang tải dữ liệu huấn luyện...')
     data = load_data(args.path, args)

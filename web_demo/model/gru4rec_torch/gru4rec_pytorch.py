@@ -120,7 +120,7 @@ class GRUEmbedding(nn.Module):
 
 # Định nghĩa mô hình GRU4Rec
 class GRU4RecModel(nn.Module):
-    def __init__(self, n_items, layers=[100], dropout_p_embed=0.0, dropout_p_hidden=0.0, embedding=0, constrained_embedding=True):
+    def __init__(self, n_items, layers=[100], dropout_p_embed=0.0, dropout_p_hidden=0.0, embedding=0, constrained_embedding=True, use_attention=False):
         super(GRU4RecModel, self).__init__()
         self.n_items = n_items
         self.layers = layers
@@ -129,6 +129,7 @@ class GRU4RecModel(nn.Module):
         self.embedding = embedding
         self.constrained_embedding = constrained_embedding
         self.start = 0
+        self.use_attention = use_attention
 
         # Khởi tạo các lớp nhúng
         if constrained_embedding:
@@ -155,6 +156,10 @@ class GRU4RecModel(nn.Module):
         self.Wy = nn.Embedding(n_items, layers[-1], sparse=True)
         self.By = nn.Embedding(n_items, 1, sparse=True)
         self.reset_parameters()
+
+        # Attention layer (simple dot-product attention)
+        if self.use_attention:
+            self.attn_linear = nn.Linear(layers[-1], 1)
 
     @torch.no_grad()
     # Đặt lại các tham số của mô hình
@@ -292,6 +297,18 @@ class GRU4RecModel(nn.Module):
         if not (self.constrained_embedding or self.embedding):
             H[0] = E
         Xh = self.hidden_step(E, H, training=training)
+
+        # Attention mechanism: aggregate hidden states
+        if self.use_attention:
+            # Xh: [seq_len, batch, hidden_dim] or [batch, hidden_dim]
+            # If Xh is 2D, treat as single step (no attention needed)
+            if Xh.dim() == 3:
+                # Compute attention weights for each step
+                attn_scores = self.attn_linear(Xh)  # [seq_len, batch, 1]
+                attn_weights = torch.softmax(attn_scores, dim=0)  # softmax over sequence
+                # Weighted sum of hidden states
+                Xh = torch.sum(attn_weights * Xh, dim=0)  # [batch, hidden_dim]
+            # else: Xh is already [batch, hidden_dim]
         R = self.score_items(Xh, O, B)
         return R
 
