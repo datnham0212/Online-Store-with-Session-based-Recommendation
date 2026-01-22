@@ -5,7 +5,7 @@ os.chdir('/kaggle/input/g4r/pytorch/default/10/gru4rec_torch')
 !pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 -q
 !pip install pandas numpy scikit-learn datasketch -q
 
-# Fast experiment: Baseline GRU4Rec on Yoochoose (train_valid split)
+# Fast experiment: Baseline GRU4Rec on Yoochoose (train_valid split) "web_demo\model\gru4rec_torch\paramfiles\yoochoose_xe_tuned_fast.py"
 for seed in [42, 123, 456]:
     !python run.py input_data/yoochoose-data/yoochoose_train_valid.dat \
       -ps "loss=cross-entropy,constrained_embedding=True,embedding=0,elu_param=0.0,layers=112,n_epochs=4,batch_size=128,dropout_p_embed=0.0,dropout_p_hidden=0.1,learning_rate=0.08,momentum=0.0,n_sample=2048,sample_alpha=0.2,bpreg=0.0,logq=1.0" \
